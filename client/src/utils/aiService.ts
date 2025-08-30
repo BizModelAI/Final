@@ -7,6 +7,7 @@ const API_BASE = "";
 export class AIService {
   private static instance: AIService;
   private cache = new Map<string, any>();
+  private previewCache = new Map<string, any>();
 
   static getInstance(): AIService {
     if (!AIService.instance) {
@@ -31,11 +32,11 @@ export class AIService {
       ? `${contentType}_${topBusinessModelName.replace(/\s+/g, '_')}`
       : contentType;
 
-    console.log(`🔍 Checking if should generate ${cacheKey} AI content...`);
+    // console.log(`🔍 Checking if should generate ${cacheKey} AI content...`);
 
     // 1. Check if we have all required data
     if (!quizData) {
-      console.log(`❌ No quiz data available - using fallback for ${cacheKey}`);
+              // console.log(`❌ No quiz data available - using fallback for ${cacheKey}`);
       return {
         shouldGenerate: false,
         reason: "No quiz data available"
@@ -45,7 +46,7 @@ export class AIService {
     // 2. Check if we have a quiz attempt ID (means data is saved in database)
     // REMOVE this check for preview content only
     if (contentType !== 'preview' && !quizAttemptId) {
-      console.log(`❌ No quiz attempt ID - quiz data not saved to database yet`);
+              // console.log(`❌ No quiz attempt ID - quiz data not saved to database yet`);
       return {
         shouldGenerate: false,
         reason: "Quiz data not saved to database"
@@ -56,7 +57,7 @@ export class AIService {
     try {
       const existingContent = await this.getAIContentFromDatabase(quizAttemptId || null, cacheKey);
       if (existingContent) {
-        console.log(`✅ Existing ${cacheKey} content found in database - using cached content`);
+        // console.log(`✅ Existing ${cacheKey} content found in database - using cached content`);
         return {
           shouldGenerate: false,
           reason: "Content already exists in database",
@@ -64,7 +65,7 @@ export class AIService {
         };
       }
     } catch (error) {
-      console.log(`⚠️ Error checking database for ${cacheKey}:`, error);
+              // console.log(`⚠️ Error checking database for ${cacheKey}:`, error);
       // Continue to check localStorage as fallback
     }
 
@@ -74,11 +75,11 @@ export class AIService {
     // 5. Check if user is authenticated (for database storage)
     const isAuthenticated = await this.isUserAuthenticated();
     if (!isAuthenticated) {
-      console.log(`⚠️ User not authenticated - will use database for ${cacheKey}`);
+      // console.log(`⚠️ User not authenticated - will use database for ${cacheKey}`);
     }
 
     // 6. All checks passed - should generate new content
-    console.log(`✅ Should generate new ${cacheKey} AI content`);
+    // console.log(`✅ Should generate new ${cacheKey} AI content`);
     return {
       shouldGenerate: true,
       reason: "No existing content found, generating new content"
@@ -98,7 +99,7 @@ export class AIService {
       }
       return false;
     } catch (error) {
-      console.error("Error checking authentication:", error);
+      // console.error("Error checking authentication:", error);
       return false;
     }
   }
@@ -285,23 +286,31 @@ ${userProfile}`;
     successPredictors: string[];
   }> {
     try {
+      // Check in-memory cache first to prevent redundant API calls
+      const cacheKey = `preview_${quizAttemptId || 'anonymous'}`;
+      if (this.previewCache.has(cacheKey)) {
+        console.log(`✅ Using cached preview insights for quiz attempt ${quizAttemptId || 'anonymous'}`);
+        return this.previewCache.get(cacheKey);
+      }
+
       // First check if we have existing AI content in database
       if (quizAttemptId) {
-        console.log(` Checking for existing preview content for quiz attempt ${quizAttemptId}`);
         const existingContent = await this.getAIContentFromDatabase(
           quizAttemptId,
           "preview",
         );
         if (existingContent) {
           console.log(`✅ Using existing preview insights from database for quiz attempt ${quizAttemptId}`);
+          // Cache the result
+          this.previewCache.set(cacheKey, existingContent);
           return existingContent;
         }
       }
 
-      console.log(` Generating fresh preview insights for quiz attempt ${quizAttemptId || 'unknown'}`);
+      console.log(`🔄 Generating fresh preview insights for quiz attempt ${quizAttemptId || 'unknown'}`);
       
-      // Generate fresh content
-      const response = await fetch(`${API_BASE}/api/quiz-attempts/attempt/${quizAttemptId}/ai-content`, {
+      // Generate fresh content using the OpenAI chat endpoint
+      const response = await fetch(`${API_BASE}/api/openai-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -514,20 +523,7 @@ ${userProfile}`;
 
       if (response && response.content) {
         try {
-          // Clean up the response content to ensure valid JSON
-          let cleanContent = response.content.trim();
-          cleanContent = cleanContent
-            .replace(/```json\s*/g, "")
-            .replace(/```\s*/g, "");
-
-          const firstBrace = cleanContent.indexOf("{");
-          const lastBrace = cleanContent.lastIndexOf("}");
-
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
-          }
-
-          const insights = JSON.parse(cleanContent);
+          const insights = this.parseOpenAIResponse(response.content);
 
           // Save the generated content intelligently
           if (quizAttemptId) {
@@ -542,10 +538,37 @@ ${userProfile}`;
         }
       }
 
-      throw new Error("No valid response from AI service");
+      console.error(`No valid response from AI service for ${modelName}`);
+      return this.getFallbackModelInsights(modelName, fitType);
     } catch (error) {
       console.error(`Error generating model insights for ${modelName}:`, error);
       return this.getFallbackModelInsights(modelName, fitType);
+    }
+  }
+
+  // Utility method to safely parse JSON responses from OpenAI
+  private parseOpenAIResponse(content: string): any {
+    try {
+      let cleanContent = content.trim();
+      
+      // Remove markdown code blocks
+      cleanContent = cleanContent
+        .replace(/```json\s*/g, "")
+        .replace(/```\s*/g, "");
+
+      // Find JSON object boundaries
+      const firstBrace = cleanContent.indexOf("{");
+      const lastBrace = cleanContent.lastIndexOf("}");
+
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
+      }
+
+      return JSON.parse(cleanContent);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.error("Raw content:", content);
+      throw new Error("Failed to parse AI response");
     }
   }
 
@@ -573,7 +596,7 @@ ${userProfile}`;
       }
 
       const data = await response.json();
-      console.log("OpenAI request successful");
+      // console.log("OpenAI request successful");
 
       return { content: data.content || data.message || data.response };
     } catch (error) {
@@ -622,26 +645,15 @@ ${userProfile}`;
             `❌ Failed to save ${contentType} AI content to database:`,
             response.status,
           );
-          // Fallback to localStorage if database save fails
-          // This part of the logic is now redundant as localStorage is removed.
-          // The original code had a fallback here, but the new code doesn't.
-          // I will remove the fallback as it's no longer applicable.
         }
       } else {
-        // TIER 3: Save to localStorage for anonymous users (no email provided)
+        // Anonymous users - content not saved to database
         console.log(
-          ` Saving ${contentType} AI content to localStorage (anonymous user)`,
+          `ℹ️ Anonymous user - ${contentType} AI content not saved to database`,
         );
-        // This part of the logic is now redundant as localStorage is removed.
-        // The original code had a fallback here, but the new code doesn't.
-        // I will remove the fallback as it's no longer applicable.
       }
     } catch (error) {
       console.error(`❌ Error saving ${contentType} AI content:`, error);
-      // Fallback to localStorage on any error
-      // This part of the logic is now redundant as localStorage is removed.
-      // The original code had a fallback here, but the new code doesn't.
-      // I will remove the fallback as it's no longer applicable.
     }
   }
 
@@ -656,18 +668,16 @@ ${userProfile}`;
       if (response.ok) {
         const data = await response.json();
         if (data.authenticated) {
-          console.log(`User authenticated - will save to database`);
+          // console.log(`User authenticated - will save to database`);
           return true;
         }
       }
 
       // For unpaid users, do not save to database (no userEmail check)
-      console.log(
-        `Unpaid user hasn't provided email - will not save to database`,
-      );
+      // console.log(`Unpaid user hasn't provided email - will not save to database`);
       return false;
     } catch (error) {
-      console.error("Error checking if should save to database:", error);
+      // console.error("Error checking if should save to database:", error);
       return false;
     }
   }
@@ -806,23 +816,7 @@ ${userProfile}`,
 
       if (response && response.content) {
         try {
-          // Clean up the response content to ensure valid JSON
-          let cleanContent = response.content.trim();
-
-          // Remove any potential markdown code blocks
-          cleanContent = cleanContent
-            .replace(/```json\s*/g, "")
-            .replace(/```\s*/g, "");
-
-          // Find the JSON object (between first { and last })
-          const firstBrace = cleanContent.indexOf("{");
-          const lastBrace = cleanContent.lastIndexOf("}");
-
-          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-            cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
-          }
-
-          const result = JSON.parse(cleanContent);
+          const result = this.parseOpenAIResponse(response.content);
           console.log(
             "Full report content generated successfully",
           );
@@ -841,7 +835,29 @@ ${userProfile}`,
         }
       }
 
-      throw new Error("No response from OpenAI");
+      console.error("No response from OpenAI for full report content");
+      // Return fallback content
+      const fallbackFitDescriptions: { [key: string]: string } = {};
+      const fallbackAvoidDescriptions: { [key: string]: string } = {};
+      topBusinessModels.forEach((model) => {
+        fallbackFitDescriptions[model.id] =
+          `${model.name} appears to be a good match based on your quiz responses and entrepreneurial goals.`;
+      });
+      bottomBusinessModels.forEach((model) => {
+        fallbackAvoidDescriptions[model.id] =
+          `${model.name} may present challenges related to your specific profile and preferences.`;
+      });
+
+      return {
+        businessFitDescriptions: fallbackFitDescriptions,
+        businessAvoidDescriptions: fallbackAvoidDescriptions,
+        potentialChallenges: [
+          "Time management while building your business",
+          "Learning new skills and technologies",
+          "Finding and retaining customers",
+          "Managing finances and cash flow",
+        ],
+      };
     } catch (error) {
       console.error(
         "Error generating full report content:",
@@ -919,7 +935,7 @@ ${userProfile}`,
       // Parse the JSON response
       let characteristics: string[] = [];
       try {
-        const parsed = JSON.parse(content);
+        const parsed = this.parseOpenAIResponse(content);
         characteristics = parsed.characteristics || [];
       } catch (parseError) {
         console.error("Error parsing characteristics JSON:", parseError);
@@ -948,7 +964,17 @@ ${userProfile}`,
       return result;
     } catch (error) {
       console.error("Error generating characteristics:", error);
-      throw error;
+      // Return fallback characteristics instead of throwing
+      return {
+        characteristics: [
+          "Entrepreneurial mindset",
+          "Strategic thinking",
+          "Risk management",
+          "Adaptability",
+          "Goal-oriented",
+          "Self-motivated"
+        ]
+      };
     }
   }
 
@@ -974,6 +1000,7 @@ ${userProfile}`,
       }
     } catch (error) {
       console.error("Error clearing business model AI content:", error);
+      // Don't throw - this is a cleanup operation that shouldn't break the flow
     }
   }
 }

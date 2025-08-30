@@ -17,6 +17,9 @@ import { QuizData, BusinessPath } from "../types";
 import { reportViewManager } from "../utils/reportViewManager";
 import { AICacheManager } from "../utils/aiCacheManager";
 import { useAIInsights } from '../contexts/AIInsightsContext';
+import { AIService } from "../utils/aiService";
+import { businessModelService } from "../utils/businessModelService";
+import { businessPaths } from "../../../shared/businessPaths";
 
 // Hook to detect mobile devices
 const useIsMobile = () => {
@@ -439,7 +442,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
         const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
         if (quizAttemptId) {
           try {
-            const { AIService } = await import("../utils/aiService");
             const aiService = AIService.getInstance();
             await aiService.saveAIContentToDatabase(
               quizAttemptId,
@@ -503,9 +505,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
     quizData: QuizData,
   ): Promise<{ [key: string]: string }> => {
     try {
-      const { businessModelService } = await import(
-        "../utils/businessModelService"
-      );
       const topThreeAdvanced = businessModelService.getTopMatches(quizData, 3);
 
       const businessModels = topThreeAdvanced.map((match) => ({
@@ -515,7 +514,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
         description: match.description || "",
       }));
 
-      const { AIService } = await import("../utils/aiService");
       const aiService = AIService.getInstance();
 
       // Use new generateModelInsights method instead of deprecated one
@@ -541,9 +539,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
       console.error("Error generating business fit descriptions:", error);
       // Set fallback descriptions
       const fallbackDescriptions: { [key: string]: string } = {};
-      const { businessModelService } = await import(
-        "../utils/businessModelService"
-      );
       const topThreeAdvanced = businessModelService.getTopMatches(quizData, 3);
 
       topThreeAdvanced.forEach((match, index) => {
@@ -560,10 +555,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
     quizData: QuizData,
   ): Promise<{ [key: string]: string }> => {
     try {
-      const { businessModelService } = await import(
-        "../utils/businessModelService"
-      );
-      const { businessPaths } = await import("../../../shared/businessPaths");
 
       const allMatches = businessModelService.getBusinessModelMatches(quizData);
 
@@ -617,7 +608,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
       const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
       if (quizAttemptId && Object.keys(descriptionsMap).length > 0) {
         try {
-          const { AIService } = await import("../utils/aiService");
           const aiService = AIService.getInstance();
           await aiService.saveAIContentToDatabase(
             quizAttemptId,
@@ -640,9 +630,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
       console.error("Error generating business avoid descriptions:", error);
       // Set fallback descriptions
       const fallbackDescriptions: { [key: string]: string } = {};
-      const { businessModelService } = await import(
-        "../utils/businessModelService"
-      );
       const allMatches = businessModelService.getBusinessModelMatches(quizData);
       const bottomThree = businessModelService.getBottomMatches(quizData, 3);
 
@@ -840,9 +827,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
           // Step 2: Generate AI-powered personalized paths
           const step2Result = await executeStep(1, async () => {
             // Use the same business model scoring system as Results page
-            const { businessModelService } = await import(
-              "../utils/businessModelService"
-            );
             const businessMatches =
               businessModelService.getBusinessModelMatches(activeQuizData);
 
@@ -896,7 +880,6 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
                 activeQuizData.directCommunicationEnjoyment,
             });
 
-            const { AIService } = await import("../utils/aiService");
             const aiService = AIService.getInstance();
             const pathsForInsights =
               (currentAiResults as any).personalizedPaths?.slice(0, 3) || [];

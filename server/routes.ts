@@ -6,7 +6,7 @@ type Request = express.Request;
 type Response = express.Response;
 import { createServer, type Server } from "http";
 import { storage } from './storage.js';
-import { getUserIdFromRequest, getSessionKey } from "./auth.js";
+import { getUserIdFromRequest, getSessionKey, setupAuthRoutes } from "./auth.js";
 import { requireAdminAuth } from "./middleware/adminAuth.js";
 import { generateBusinessResources } from "./services/resourceService.js";
 import { pdfService } from "./services/pdfService.js";
@@ -14,6 +14,7 @@ import { emailService } from "./services/emailService.js";
 import { aiScoringService } from "./services/aiScoringService.js";
 import { personalityAnalysisService } from "./services/personalityAnalysisService.js";
 import { db } from "./db.js";
+import { Prisma } from "@prisma/client";
 import Stripe from "stripe";
 import {
   Client,
@@ -121,6 +122,17 @@ class OpenAIRateLimiter {
 
 const openaiRateLimiter = new OpenAIRateLimiter();
 
+// Graceful shutdown cleanup
+process.on('SIGTERM', () => {
+  console.log('🔄 Cleaning up rate limiters...');
+  // Add cleanup method if needed
+});
+
+process.on('SIGINT', () => {
+  console.log('🔄 Cleaning up rate limiters...');
+  // Add cleanup method if needed
+});
+
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2025-06-30.basil",
@@ -187,7 +199,10 @@ async function claimAnonymousQuizAttemptsForUser(user, sessionId) {
 
 export async function registerRoutes(app: Express): Promise<void> {
   // registerDebugRoutes(app);
-  console.log("[DEBUG] registerRoutes called - registering main API routes");
+
+  // Setup authentication routes
+  setupAuthRoutes(app);
+
   // Health check endpoint
   app.get("/api/health", async (req: Request, res: Response) => {
     try {
@@ -271,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       // Allow unauthenticated users by always generating a session key if not present
       let userId = await getUserIdFromRequest(req);
       // Prefer sessionId from body if provided, else from session
-      const sessionId = req.body.sessionId || req.sessionID;
+      let sessionId = req.body.sessionId || req.sessionID;
       if (!sessionId) {
         sessionId = `anon_${Date.now()}_${Math.random().toString(36).substring(2)}`;
       }
@@ -767,8 +782,8 @@ export async function registerRoutes(app: Express): Promise<void> {
   }
 
 
-  // Get a specific quiz attempt by ID
-  app.get("/api/quiz-attempts/attempt/:quizAttemptId", async (req: Request, res: Response) => {
+  // Record a new quiz attempt
+  app.post("/api/quiz-attempts/attempt", async (req: Request, res: Response) => {
     try {
       const { userId, quizData } = req.body;
 
@@ -817,6 +832,36 @@ export async function registerRoutes(app: Express): Promise<void> {
     }
   });
 
+  // Get a specific quiz attempt by ID
+  app.get("/api/quiz-attempts/attempt/:quizAttemptId", async (req: Request, res: Response) => {
+    try {
+      const quizAttemptId = parseInt(req.params.quizAttemptId);
+      const currentUserId = await getUserIdFromRequest(req);
+
+      // Check if user is authenticated
+      if (!currentUserId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const attempt = await storage.getQuizAttempt(quizAttemptId);
+
+      if (!attempt) {
+        return res.status(404).json({ error: "Quiz attempt not found" });
+      }
+
+      // Check if user owns this quiz attempt
+      if (attempt.userId !== currentUserId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      console.log(`Quiz attempt ${quizAttemptId} retrieved for user ${currentUserId}`);
+      res.json(attempt);
+    } catch (error) {
+      console.error("Error getting quiz attempt:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get quiz attempts history for a user
   app.get("/api/quiz-attempts/user/:userId", async (req: Request, res: Response) => {
     try {
@@ -833,19 +878,21 @@ export async function registerRoutes(app: Express): Promise<void> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const attempt = await storage.getQuizAttempt(userId);
+      const attempts = await storage.getQuizAttempts(userId);
 
-      if (!attempt) {
-        return res.status(404).json({ error: "Quiz attempt not found" });
+      if (!attempts || attempts.length === 0) {
+        return res.status(404).json({ error: "No quiz attempts found for this user" });
       }
 
-      // Check if user owns this quiz attempt
-      if (attempt.userId !== currentUserId) {
+      // Check if user owns these quiz attempts
+      const userAttempts = attempts.filter(attempt => attempt.userId === currentUserId);
+      
+      if (userAttempts.length === 0) {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      console.log(`Quiz attempt ${userId} retrieved for user ${currentUserId}`);
-      res.json(attempt);
+      console.log(`${userAttempts.length} quiz attempts retrieved for user ${currentUserId}`);
+      res.json(userAttempts);
     } catch (error) {
       console.error("Error getting quiz attempt:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -1768,7 +1815,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   );
 
   // Register payment status route first for debugging
-  console.log('[DEBUG] Registering /api/payment-status/:paymentId route...');
+  
   app.get(
     "/api/payment-status/:paymentId",
     async (req: Request, res: Response) => {
@@ -1838,7 +1885,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
     },
   );
-  console.log('[DEBUG] Registered /api/payment-status/:paymentId route.');
+  
 
   // Get payment status by payment ID
   app.get(
@@ -3188,52 +3235,32 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
   app.get("/api/admin/all-emails", async (req: Request, res: Response) => {
     try {
       console.log("Fetching all collected emails...");
+      console.log("Storage object:", typeof storage);
+      console.log("Storage methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(storage)));
 
-      // Get emails from paid users (permanent storage)
-      if (!db) {
-        return res.status(500).json({ error: "Database not available" });
-      }
-      const paidUsers = await db.user.findMany({
-        where: { email: { not: null } },
-        select: { email: true, source: sql`'paid_user'`, createdAt: true },
-      });
-
-      // Get emails from unpaid/temporary users (including expired ones for marketing)
-      const unpaidUsers = await db.user.findMany({
-        where: { isTemporary: true },
-        select: { email: true, source: sql`'unpaid_user'`, createdAt: true, expiresAt: true },
-      });
-
-      // Combine and deduplicate emails
-      const allEmails = [...paidUsers, ...unpaidUsers];
-      const uniqueEmails = new Map();
-
-      allEmails.forEach((emailRecord) => {
-        if (!emailRecord.email) return;
-        const email = emailRecord.email.toLowerCase();
-        if (!uniqueEmails.has(email) || emailRecord.source === "paid_user") {
-          // Prefer paid user records over unpaid user records
-          uniqueEmails.set(email, emailRecord);
-        }
-      });
-
-      const emailList = Array.from(uniqueEmails.values()).sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
+      // Get all users with emails
+      const allUsers = await storage.getAllUsers();
+      console.log("All users result:", allUsers);
+      
+      // Simple response for now
+      const emails = allUsers.map(user => ({
+        email: user.email,
+        isTemporary: user.isTemporary,
+        createdAt: user.createdAt,
+        expiresAt: user.expiresAt
+      }));
 
       res.json({
         success: true,
-        totalEmails: emailList.length,
-        emails: emailList,
+        totalEmails: emails.length,
+        emails: emails,
         summary: {
-          paidUsers: paidUsers.length,
-          unpaidUsers: unpaidUsers.length,
-          uniqueEmails: emailList.length,
+          totalUsers: emails.length,
         },
       });
     } catch (error) {
       console.error("Error fetching all emails:", error);
+      console.error("Error stack:", error.stack);
       res.status(500).json({ error: "Failed to fetch emails" });
     }
   });
@@ -3277,6 +3304,47 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
     }
   });
 
+  // Send quiz results email
+  app.post("/api/send-quiz-results", async (req: Request, res: Response) => {
+    try {
+      const { email, quizData, attemptId } = req.body;
+      
+      if (!email || !quizData) {
+        return res.status(400).json({ error: "Email and quiz data are required" });
+      }
+
+      console.log(`API: POST /api/send-quiz-results - Sending email to ${email} for attempt ${attemptId}`);
+
+      // Import email service
+      const { emailService } = await import("./services/emailService.js");
+      
+      // Send the quiz results email
+      const result = await emailService.sendQuizResults(email, quizData, attemptId);
+      
+      if (result.success) {
+        console.log(`API: Quiz results email sent successfully to ${email}`);
+        res.json({ success: true, message: "Email sent successfully" });
+      } else {
+        if (result.rateLimitInfo) {
+          console.log(`API: Email rate limit hit for ${email}`);
+          res.status(429).json({ 
+            error: "Email rate limit exceeded", 
+            rateLimitInfo: result.rateLimitInfo 
+          });
+        } else {
+          console.log(`API: Failed to send quiz results email to ${email}`);
+          res.status(500).json({ error: "Failed to send email" });
+        }
+      }
+    } catch (error) {
+      console.error("Error sending quiz results email:", error);
+      res.status(500).json({ 
+        error: "Internal server error", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
+    }
+  });
+
   // TEST-ONLY: Mark a user as paid by email (development only)
   if (process.env.NODE_ENV === 'development') {
     app.post('/api/admin/mark-user-paid', async (req: Request, res: Response) => {
@@ -3304,7 +3372,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
       const { email, password } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
       try {
-        const bcrypt = require('bcryptjs');
+        const bcrypt = await import('bcrypt');
         const passwordHash = await bcrypt.hash(password, 10);
         let user = await storage.prisma.user.findUnique({ where: { email } });
         if (user) {

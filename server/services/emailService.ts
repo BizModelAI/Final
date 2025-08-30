@@ -109,7 +109,8 @@ export class EmailService {
 
   private cleanupEmailCache(): void {
     const oneHourAgo = Date.now() - (60 * 60 * 1000);
-    for (const [email, data] of this.emailCache.entries()) {
+    const entries = Array.from(this.emailCache.entries());
+    for (const [email, data] of entries) {
       if (data.lastSent < oneHourAgo) {
         this.emailCache.delete(email);
       }
@@ -188,7 +189,13 @@ export class EmailService {
 
   async sendQuizResults(email: string, quizData: QuizData, quizAttemptId?: number): Promise<{ success: boolean; rateLimitInfo?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
     const subject = "Your BizModelAI Quiz Results";
-    const html = this.generateQuizResultsHTML(quizData, quizAttemptId);
+    
+    // Calculate actual business model scores based on quiz data
+    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+    
+    // Use your EXACT React-based email template with real business model scores
+    const { generateUnpaidEmailHtml } = await import("../utils/reactToHtml.js");
+    const html = generateUnpaidEmailHtml(quizData, email, scoredBusinessModels);
 
     return await this.sendEmail({
       to: email,
@@ -211,7 +218,13 @@ export class EmailService {
 
   async sendFullReport(email: string, quizData: QuizData, quizAttemptId?: number): Promise<{ success: boolean; rateLimitInfo?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
     const subject = "Your Complete Business Report - BizModelAI";
-    const html = this.generateFullReportHTML(quizData, quizAttemptId);
+    
+    // Calculate actual business model scores based on quiz data
+    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+    
+    // Use your EXACT React-based paid user email template with real business model scores
+    const { generatePaidEmailHtml } = await import("../utils/reactToHtml.js");
+    const html = generatePaidEmailHtml(quizData, email, scoredBusinessModels);
 
     return await this.sendEmail({
       to: email,
@@ -266,14 +279,70 @@ export class EmailService {
     });
   }
 
-  private generateQuizResultsHTML(quizData: QuizData, quizAttemptId?: number): string {
-    const topBusinessModel = this.getTopBusinessModel(quizData);
-    const personalizedPaths = this.getPersonalizedPaths(quizData);
-    const top3Paths = personalizedPaths.slice(0, 3);
+  private getPersonalizedSnapshot(quizData: any): string[] {
+    if (!quizData) return [
+        '• Prefer flexibility with structure',
+        '• Thrive on independent projects',
+        '• Are motivated by financial freedom',
+        '• Learn best by doing',
+        '• Adapt quickly to new tools and systems',
+        '• Value passion and personal meaning in your work',
+    ];
+    const lines = [];
+    // 1. Work structure
+    if (quizData.workStructurePreference === 'some-structure' || quizData.workStructurePreference === 'mix-both') {
+        lines.push('• Prefer flexibility with structure');
+    } else if (quizData.workStructurePreference === 'full-structure') {
+        lines.push('• Prefer clear structure and routines');
+    } else {
+        lines.push('• Comfortable with flexible or unstructured work');
+    }
+    // 2. Collaboration
+    if (quizData.workCollaborationPreference === 'mostly-solo' || quizData.workCollaborationPreference === 'solo-flexible') {
+        lines.push('• Thrive on independent projects');
+    } else if (quizData.workCollaborationPreference === 'team') {
+        lines.push('• Enjoy collaborating with others');
+    } else {
+        lines.push('• Open to both solo and team work');
+    }
+    // 3. Motivation
+    if (quizData.mainMotivation === 'financial-freedom' || quizData.primaryMotivation === 'financial-independence') {
+        lines.push('• Are motivated by financial freedom');
+    } else if (quizData.mainMotivation === 'passion' || quizData.passionIdentityAlignment >= 4) {
+        lines.push('• Driven by passion and personal meaning');
+    } else {
+        lines.push('• Motivated by growth and new challenges');
+    }
+    // 4. Learning style
+    if (quizData.learningPreference === 'hands-on') {
+        lines.push('• Learn best by doing');
+    } else if (quizData.learningPreference === 'after-some-research') {
+        lines.push('• Prefer to research before taking action');
+    } else {
+        lines.push('• Adapt learning style to the situation');
+    }
+    // 5. Tech skills/adaptability
+    if (quizData.techSkillsRating >= 4) {
+        lines.push('• Confident with technology and new tools');
+    } else if (quizData.techSkillsRating === 3) {
+        lines.push('• Comfortable with most digital tools');
+    } else {
+        lines.push('• Willing to learn new technology as needed');
+    }
+    // 6. Resilience/self-motivation
+    if (quizData.longTermConsistency >= 4 || quizData.selfMotivationLevel >= 4) {
+        lines.push('• Highly self-motivated and consistent');
+    } else if (quizData.longTermConsistency === 3) {
+        lines.push('• Stay motivated with clear goals and support');
+    } else {
+        lines.push('• Working to build consistency and motivation');
+    }
+    return lines.slice(0, 6);
+  }
 
-    const resultsLink = quizAttemptId
-      ? `${process.env.FRONTEND_URL || "https://bizmodelai.com"}/results?quizAttemptId=${quizAttemptId}`
-      : `${process.env.FRONTEND_URL || "https://bizmodelai.com"}/results`;
+  private async generateQuizResultsHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
+    const { generatePreviewEmailHTML } = await import('./newEmailTemplates.js');
+    return generatePreviewEmailHTML(quizData, quizAttemptId);
 
     return `
       <!DOCTYPE html>
@@ -921,12 +990,9 @@ export class EmailService {
     `;
   }
 
-  private generateFullReportHTML(quizData: QuizData, quizAttemptId?: number): string {
-    const personalizedPaths = this.getPersonalizedPaths(quizData);
-    const top3Paths = personalizedPaths.slice(0, 3);
-    const resultsLink = quizAttemptId
-      ? `${process.env.FRONTEND_URL || "https://bizmodelai.com"}/results?quizAttemptId=${quizAttemptId}`
-      : `${process.env.FRONTEND_URL || "https://bizmodelai.com"}/results`;
+  private async generateFullReportHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
+    const { generatePaidEmailHTML } = await import('./newEmailTemplates.js');
+    return generatePaidEmailHTML(quizData, quizAttemptId);
 
     return `
       <!DOCTYPE html>

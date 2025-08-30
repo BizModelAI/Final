@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_ENV=development tsx server/working-index.ts",
+    "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "vite build",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
@@ -31,8 +31,9 @@
     "@tanstack/react-query": "^5.60.5",
     "@types/pg": "^8.15.4",
     "@vercel/analytics": "^1.5.0",
-    "@vercel/node": "^5.3.6",
+    "@vercel/node": "^5.3.17",
     "@vercel/speed-insights": "^1.2.0",
+    "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
@@ -54,8 +55,8 @@
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
     "puppeteer": "^24.12.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
     "react-router-dom": "^7.6.3",
     "recharts": "^2.15.4",
@@ -64,10 +65,9 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
-    "ws": "^8.18.0",
-    "zod": "^3.24.2",
     "vite": "^7.0.5",
-    "@vitejs/plugin-react": "^4.6.0"
+    "ws": "^8.18.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",

@@ -182,10 +182,8 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
       }
 
       // Always send the email (do not check unsubscribe)
-      // NOTE: /api/send-quiz-results and /api/send-full-report are not implemented in the new backend.
-      // TODO: Implement these endpoints or update this logic if email sending is required.
-      /*
-      const endpoint = isUnlocked ? "/api/send-full-report" : "/api/send-quiz-results";
+      // Use /api/send-quiz-results for both locked and unlocked reports
+      const endpoint = "/api/send-quiz-results";
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for email sending
       
@@ -204,7 +202,7 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
       
       if (res.ok) {
         setStatus("success");
-        setMessage(isUnlocked ? "Full report sent to your email!" : "Preview sent to your email!");
+        setMessage("Results sent to your email!");
       } else {
         const errorData = await res.json().catch(() => ({}));
         
@@ -219,9 +217,6 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
           setMessage(errorData.error || "Failed to send email. Please try again later.");
         }
       }
-      */
-      setStatus("error");
-      setMessage("Email sending is currently unavailable.");
     } catch (error) {
       setStatus("error");
       if (error instanceof Error && error.name === 'AbortError') {

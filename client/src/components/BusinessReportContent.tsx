@@ -417,7 +417,7 @@ const BusinessReportContent: React.FC<BusinessReportContentProps> = ({
               <span className="font-semibold text-gray-700">Business Path</span>
             </div>
             <p>&copy; 2025 Business Path. All rights reserved.</p>
-            <p className="mt-1">Your personalized business blueprint • Generated on {new Date().toLocaleDateString()}</p>
+            <p className="mt-1">Your personalized business recommendation • Generated on {new Date().toLocaleDateString()}</p>
           </div>
         </div>
       </div>

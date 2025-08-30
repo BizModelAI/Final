@@ -7,12 +7,27 @@ class Storage {
     this.prisma = new PrismaClient();
   }
 
+  async testConnection() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getUser(id: number) {
     return await this.prisma.user.findUnique({ where: { id } });
   }
 
   async getUserByEmail(email: string) {
     return await this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async getAllUsers() {
+    return await this.prisma.user.findMany({
+      select: { email: true, isTemporary: true, createdAt: true, expiresAt: true },
+    });
   }
 
   async createUser(data: any) {

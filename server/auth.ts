@@ -1,7 +1,7 @@
 import express from "express";
 import { storage } from "./storage.js";
-import bcrypt from "bcrypt";
-import crypto from "crypto";
+import * as bcrypt from "bcrypt";
+import * as crypto from "crypto";
 
 type Express = express.Express;
 type Request = express.Request;
@@ -21,7 +21,8 @@ setInterval(() => {
   const now = Date.now();
   let cleanedCount = 0;
 
-  for (const [key, session] of tempSessionCache.entries()) {
+  const entries = Array.from(tempSessionCache.entries());
+  for (const [key, session] of entries) {
     if (now - session.timestamp > SESSION_MAX_AGE) {
       tempSessionCache.delete(key);
       cleanedCount++;
@@ -296,28 +297,16 @@ export function setupAuthRoutes(app: Express) {
 
       // Find user by email
       const user = await storage.getUserByEmail(email);
-      console.log("[DEBUG] Login attempt for email:", email);
+  
       if (!user) {
-        console.log("[DEBUG] No user found for email:", email);
+
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      console.log("[DEBUG] Found user:", { 
-        id: user.id, 
-        email: user.email, 
-        passwordHash: user.password, 
-        isTemporary: user.isTemporary,
-        isPaid: user.isPaid,
-        sessionId: user.sessionId,
-        expiresAt: user.expiresAt
-      });
+
 
       // Check if user is temporary (unpaid) - also check for empty passwords which indicate temporary users
       if (user.isTemporary || !user.password || user.password === "") {
-        console.log("[DEBUG] Temporary user attempted to log in:", email, {
-          isTemporary: user.isTemporary,
-          hasPassword: !!user.password,
-          passwordLength: user.password?.length || 0
-        });
+
         console.warn(`[AUTH] Denied login for temporary/unpaid user: ${email}`);
         return res.status(403).json({ 
           error: "You need to pay to access your dashboard. Please purchase a report to unlock login access.",
@@ -328,7 +317,7 @@ export function setupAuthRoutes(app: Express) {
 
       // Check password (only for non-temporary users)
       const validPassword = await bcrypt.compare(password, user.password);
-      console.log("[DEBUG] bcrypt.compare result:", validPassword);
+
       if (!validPassword) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -336,15 +325,7 @@ export function setupAuthRoutes(app: Express) {
       // Set session using helper (sets both session and cache)
       setUserIdInRequest(req, user.id);
       console.info(`[AUTH] Session set for paid user: ${user.email}, userId: ${user.id}`);
-      console.log("[DEBUG] setUserIdInRequest called for user:", {
-        id: user.id,
-        email: user.email,
-        isTemporary: user.isTemporary,
-        isPaid: user.isPaid,
-        sessionId: req.sessionID,
-        sessionUserId: req.session?.userId,
-        sessionData: req.session
-      });
+
 
       // TEMPORARY FIX: Force save with explicit session management
       // This ensures the userId is saved and available for subsequent requests

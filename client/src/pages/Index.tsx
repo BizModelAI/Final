@@ -49,7 +49,7 @@ function Index() {
               className="text-xl md:text-2xl text-slate-300 max-w-4xl mx-auto mb-12 leading-relaxed"
             >
               Escape analysis paralysis forever. Our AI analyzes your unique situation 
-              and delivers a personalized business blueprint that actually works for you.
+              and delivers a personalized business recommendation that actually works for you.
             </motion.p>
 
             {/* CTA Section */}
@@ -98,7 +98,7 @@ function Index() {
                 <svg className="w-6 h-6 mr-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <span className="text-lg font-medium">18+ business models analyzed</span>
+                <span className="text-lg font-medium">20+ business models analyzed</span>
               </div>
               
               <div className="flex items-center justify-center text-slate-300">
@@ -128,7 +128,7 @@ function Index() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                icon: "�",
+                icon: "🧠",
                 title: "Analysis Paralysis",
                 description: "Too many options, not enough clarity on what actually fits your lifestyle and goals."
               },
@@ -138,7 +138,7 @@ function Index() {
                 description: "Hours spent researching business ideas that aren't right for your situation or skills."
               },
               {
-                icon: "�",
+                icon: "⚠️",
                 title: "Fear of Wrong Choice",
                 description: "Worried about investing time and money into a business model that won't work for you."
               }
@@ -184,7 +184,7 @@ function Index() {
                   {
                     step: "2",
                     title: "AI Analysis",
-                    description: "Our AI processes your responses against 18 proven business models and market data."
+                    description: "Our AI processes your responses against 25 proven business models and market data."
                   },
                   {
                     step: "3",

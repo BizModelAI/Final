@@ -1,6 +1,5 @@
 // Debugging utilities for AI content system
-const API_BASE =
-  "http://localhost:6000";
+const API_BASE = "";
 
 export const debugAIContent = {
   // Test AI content endpoints

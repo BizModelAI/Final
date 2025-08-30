@@ -153,7 +153,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartQuiz }) => {
             <div className="flex items-center justify-center">
               <Target className="h-8 w-8 text-green-400 mr-4" />
               <div className="text-left">
-                <div className="text-2xl font-bold text-white">18+</div>
+                <div className="text-2xl font-bold text-white">25</div>
                 <div className="text-blue-300">business models analyzed</div>
               </div>
             </div>

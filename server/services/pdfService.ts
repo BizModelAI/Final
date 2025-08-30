@@ -58,58 +58,76 @@ export class PDFService {
       options;
 
     try {
-      // Try to use Puppeteer for real PDF generation
-      await this.initializeBrowser();
+      // Check if we can access the client-side PDF report page
+      const canAccessClient = await this.checkClientAccessibility(baseUrl);
+      
+      if (canAccessClient) {
+        // Try to use Puppeteer for real PDF generation
+        await this.initializeBrowser();
 
-      if (!this.browser) {
-        console.log("Browser not available, falling back to HTML");
+        if (!this.browser) {
+          console.log("Browser not available, falling back to HTML");
+          return this.generateHTMLFallback(options);
+        }
+
+        const page = await this.browser.newPage();
+
+        // Create the PDF report URL with encoded data including AI analysis
+        const reportData = {
+          quizData,
+          userEmail,
+          aiAnalysis,
+          topBusinessPath,
+        };
+        const encodedData = encodeURIComponent(JSON.stringify(reportData));
+        const pdfUrl = `${baseUrl}/pdf-report?data=${encodedData}`;
+
+        console.log("Loading PDF report page:", pdfUrl);
+
+        // Navigate to the PDF report page
+        await page.goto(pdfUrl, {
+          waitUntil: "networkidle2",
+          timeout: 30000,
+        });
+
+        // Wait for the page to fully render
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        // Generate PDF with optimized settings
+        const pdfBuffer = await page.pdf({
+          format: "A4",
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: {
+            top: "0.5in",
+            right: "0.5in",
+            bottom: "0.5in",
+            left: "0.5in",
+          },
+          displayHeaderFooter: false,
+        });
+
+        await page.close();
+        console.log("PDF generated successfully with Puppeteer");
+
+        return Buffer.from(pdfBuffer);
+      } else {
+        console.log("Client-side PDF report not accessible, using HTML fallback");
         return this.generateHTMLFallback(options);
       }
-
-      const page = await this.browser.newPage();
-
-      // Create the PDF report URL with encoded data including AI analysis
-      const reportData = {
-        quizData,
-        userEmail,
-        aiAnalysis,
-        topBusinessPath,
-      };
-      const encodedData = encodeURIComponent(JSON.stringify(reportData));
-      const pdfUrl = `${baseUrl}/pdf-report?data=${encodedData}`;
-
-      console.log("Loading PDF report page:", pdfUrl);
-
-      // Navigate to the PDF report page
-      await page.goto(pdfUrl, {
-        waitUntil: "networkidle2",
-        timeout: 30000,
-      });
-
-      // Wait for the page to fully render
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Generate PDF with optimized settings
-      const pdfBuffer = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        preferCSSPageSize: true,
-        margin: {
-          top: "0.5in",
-          right: "0.5in",
-          bottom: "0.5in",
-          left: "0.5in",
-        },
-        displayHeaderFooter: false,
-      });
-
-      await page.close();
-      console.log("PDF generated successfully");
-
-      return Buffer.from(pdfBuffer);
     } catch (error) {
       console.error("PDF generation failed, falling back to HTML:", error);
       return this.generateHTMLFallback(options);
+    }
+  }
+
+  private async checkClientAccessibility(baseUrl: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${baseUrl}/pdf-report`);
+      return response.ok;
+    } catch (error) {
+      console.log("Client accessibility check failed:", error instanceof Error ? error.message : String(error));
+      return false;
     }
   }
 
@@ -142,7 +160,7 @@ export class PDFService {
     // Safe user display name
     const safeUserName = escapeHtml(userEmail?.split("@")[0] || "User");
 
-    // Enhanced HTML template that closely matches the PDFReport component
+    // Enhanced HTML template with inline CSS for better PDF compatibility
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -150,8 +168,6 @@ export class PDFService {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Business Path Analysis Report</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
         <style>
             @media print {
                 body { 
@@ -164,64 +180,145 @@ export class PDFService {
                 .gradient-bg {
                     background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%) !important;
                 }
-                .trait-bar {
-                    background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%) !important;
-                }
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0;
+                padding: 0;
+                background: white;
+                color: #1f2937;
+                line-height: 1.6;
             }
             .gradient-bg {
                 background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
             }
-            .trait-bar {
-                background: linear-gradient(90deg, #3B82F6 0%, #8B5CF6 100%);
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
             }
+            .header {
+                text-align: center;
+                padding: 40px 20px;
+                margin-bottom: 40px;
+                color: white;
+            }
+            .section {
+                margin-bottom: 40px;
+                page-break-inside: avoid;
+            }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin: 20px 0;
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+                backdrop-filter: blur(4px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .text-center { text-align: center; }
+            .text-2xl { font-size: 1.5rem; }
+            .text-xl { font-size: 1.25rem; }
+            .text-lg { font-size: 1.125rem; }
+            .font-bold { font-weight: 700; }
+            .font-semibold { font-weight: 600; }
+            .mb-2 { margin-bottom: 0.5rem; }
+            .mb-4 { margin-bottom: 1rem; }
+            .mb-6 { margin-bottom: 1.5rem; }
+            .mb-8 { margin-bottom: 2rem; }
+            .p-4 { padding: 1rem; }
+            .p-6 { padding: 1.5rem; }
+            .p-8 { padding: 2rem; }
+            .rounded-xl { border-radius: 0.75rem; }
+            .rounded-2xl { border-radius: 1rem; }
+            .text-white { color: white; }
+            .text-gray-700 { color: #374151; }
+            .text-blue-600 { color: #2563eb; }
+            .text-green-600 { color: #16a34a; }
+            .text-purple-600 { color: #9333ea; }
+            .bg-white { background: white; }
+            .bg-blue-50 { background: #eff6ff; }
+            .bg-purple-50 { background: #faf5ff; }
+            .space-y-4 > * + * { margin-top: 1rem; }
+            .space-y-6 > * + * { margin-top: 1.5rem; }
+            .space-y-8 > * + * { margin-top: 2rem; }
+            .flex { display: flex; }
+            .items-start { align-items: flex-start; }
+            .items-center { align-items: center; }
+            .justify-center { justify-content: center; }
+            .mr-2 { margin-right: 0.5rem; }
+            .mt-2 { margin-top: 0.5rem; }
+            .mt-4 { margin-top: 1rem; }
+            .border-t { border-top: 1px solid #e5e7eb; }
+            .pt-6 { padding-top: 1.5rem; }
+            .opacity-90 { opacity: 0.9; }
+            .opacity-75 { opacity: 0.75; }
+            .from-blue-50 { background: linear-gradient(to right, #eff6ff, #faf5ff); }
+            .to-purple-50 { background: linear-gradient(to right, #eff6ff, #faf5ff); }
+            .page-break { page-break-before: always; }
+            .avoid-break { page-break-inside: avoid; }
+            .text-sm { font-size: 0.875rem; }
+            .font-medium { font-weight: 500; }
+            .text-blue-500 { color: #3b82f6; }
+            .bg-gradient-to-r { background: linear-gradient(to right, var(--from-color), var(--to-color)); }
+            .from-blue-50 { --from-color: #eff6ff; }
+            .to-purple-50 { --to-color: #faf5ff; }
+            .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+            .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+            .backdrop-blur-sm { backdrop-filter: blur(4px); }
+            .border-l-4 { border-left: 4px solid; }
+            .border-blue-500 { border-color: #3b82f6; }
+            .border-green-500 { border-color: #16a34a; }
+            .border-purple-500 { border-color: #9333ea; }
         </style>
     </head>
-    <body class="bg-white text-gray-900">
-        <div class="pdf-report bg-white text-gray-900 min-h-screen">
+    <body>
+        <div class="container">
             <!-- Header -->
-            <div class="gradient-bg text-white p-8 mb-8">
-                <div class="max-w-4xl mx-auto">
-                    <div class="text-center mb-6">
-                        <h1 class="text-4xl font-bold mb-2">Business Path Analysis Report</h1>
-                                                <p class="text-xl opacity-90">Personalized Recommendations for ${safeUserName}</p>
-                        <p class="text-sm opacity-75 mt-2">Generated on ${new Date().toLocaleDateString()}</p>
+            <div class="gradient-bg header">
+                <h1 class="text-2xl font-bold mb-4">Business Path Analysis Report</h1>
+                <p class="text-xl opacity-90">Personalized Recommendations for ${safeUserName}</p>
+                <p class="text-sm opacity-75 mt-2">Generated on ${new Date().toLocaleDateString()}</p>
+                
+                <div class="grid">
+                    <div class="card">
+                        <div class="mb-2">
+                            <span class="font-semibold">Income Goal</span>
+                        </div>
+                        <p class="text-2xl font-bold">$${formatCurrency(quizData.successIncomeGoal)}/month</p>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <div class="flex items-center justify-center mb-2">
-                                <span class="font-semibold">Income Goal</span>
-                            </div>
-                                                        <p class="text-2xl font-bold">$${formatCurrency(quizData.successIncomeGoal)}/month</p>
+                    <div class="card">
+                        <div class="mb-2">
+                            <span class="font-semibold">Timeline</span>
                         </div>
-                        
-                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <div class="flex items-center justify-center mb-2">
-                                <span class="font-semibold">Timeline</span>
-                            </div>
-                                                        <p class="text-2xl font-bold">${formatTimeline(quizData.firstIncomeTimeline)}</p>
+                        <p class="text-2xl font-bold">${formatTimeline(quizData.firstIncomeTimeline)}</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="mb-2">
+                            <span class="font-semibold">Investment</span>
                         </div>
-                        
-                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <div class="flex items-center justify-center mb-2">
-                                <span class="font-semibold">Investment</span>
-                            </div>
-                                                        <p class="text-2xl font-bold">$${formatCurrency(quizData.upfrontInvestment)}</p>
-                        </div>
+                        <p class="text-2xl font-bold">$${formatCurrency(quizData.upfrontInvestment)}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="max-w-4xl mx-auto px-8 pb-8">
-                <!-- Summary Section -->
-                <section class="mb-12 avoid-break">
-                    <h2 class="text-2xl font-bold mb-6">Executive Summary</h2>
-                    
-                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl">
-                        <div class="space-y-4">
+            <!-- Summary Section -->
+            <section class="section">
+                <h2 class="text-2xl font-bold mb-6">Executive Summary</h2>
+                
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-2xl shadow-lg">
+                    <div class="space-y-4">
                             <div>
                                 <h3 class="font-semibold text-gray-900">Your Profile</h3>
-                                <div class="grid grid-cols-2 gap-4 mt-2 text-sm">
+                                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem; font-size: 0.875rem;">
                                                                         <div><span class="font-medium">Income Goal:</span> $${formatCurrency(quizData.successIncomeGoal)}/month</div>
                                                                         <div><span class="font-medium">Timeline:</span> ${formatTimeline(quizData.firstIncomeTimeline)}</div>
                                                                         <div><span class="font-medium">Investment:</span> $${formatCurrency(quizData.upfrontInvestment)}</div>
@@ -238,11 +335,11 @@ export class PDFService {
                 </section>
 
                 <!-- Action Plan -->
-                <section class="mb-12 page-break">
+                <section class="section page-break">
                     <h2 class="text-2xl font-bold mb-6">Your 90-Day Action Plan</h2>
                     
                     <div class="space-y-6">
-                        <div class="avoid-break">
+                        <div class="avoid-break bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
                             <h3 class="text-lg font-semibold mb-3 text-blue-600">Week 1: Foundation</h3>
                             <ul class="space-y-2 text-gray-700">
                                 <li class="flex items-start">
@@ -260,7 +357,7 @@ export class PDFService {
                             </ul>
                         </div>
 
-                        <div class="avoid-break">
+                        <div class="avoid-break bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500">
                             <h3 class="text-lg font-semibold mb-3 text-green-600">Month 1: Launch Preparation</h3>
                             <ul class="space-y-2 text-gray-700">
                                 <li class="flex items-start">
@@ -278,7 +375,7 @@ export class PDFService {
                             </ul>
                         </div>
 
-                        <div class="avoid-break">
+                        <div class="avoid-break bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
                             <h3 class="text-lg font-semibold mb-3 text-purple-600">Month 2-3: Growth & Optimization</h3>
                             <ul class="space-y-2 text-gray-700">
                                 <li class="flex items-start">

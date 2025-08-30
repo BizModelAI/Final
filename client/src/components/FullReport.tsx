@@ -38,6 +38,7 @@ import { renderMarkdownContent } from "../utils/markdownUtils";
 import { reportViewManager } from "../utils/reportViewManager";
 import { getSafeEmoji } from '../utils/contentUtils';
 import { businessPaths } from '../data/businessPaths'; // or the correct path if needed
+import { getActionPlanForModel, MOTIVATIONAL_MESSAGE } from '../utils/hardcodedContent';
 
 // Helper functions to convert stored numbers back to original quiz ranges
 const getIncomeRangeLabel = (value: number): string => {
@@ -518,8 +519,7 @@ const FullReport: React.FC<FullReportProps> = ({
           quizAttemptId,
         );
         
-        // Import hardcoded content
-        const { getActionPlanForModel, MOTIVATIONAL_MESSAGE } = await import("../utils/hardcodedContent");
+
         
         // Construct complete AI insights object
         const completeInsights = {
@@ -570,8 +570,7 @@ This business path aligns with your ${quizData.workCollaborationPreference} work
           `Time commitment of ${getTimeCommitmentRangeLabel(quizData.weeklyTimeCommitment)} allows for realistic progress`,
         ];
 
-        // Import hardcoded content for fallback
-        const { getActionPlanForModel, MOTIVATIONAL_MESSAGE } = await import("../utils/hardcodedContent");
+
         
         setAiInsights({
           // AI-generated content (fallback)
@@ -673,10 +672,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
       try {
         setIsLoadingDescriptions(true);
 
-        const { businessModelService } = await import(
-          "../utils/businessModelService"
-        );
-        const { businessPaths } = await import("../../../shared/businessPaths");
+
 
         const allMatches =
           businessModelService.getBusinessModelMatches(quizData);
@@ -733,9 +729,6 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
         console.error("Error generating business avoid descriptions:", error);
         // Set fallback descriptions
         const fallbackDescriptions: { [key: string]: string } = {};
-        const { businessModelService } = await import(
-          "../utils/businessModelService"
-        );
         const allMatches =
           businessModelScores ||
           businessModelService.getBusinessModelMatches(quizData);
@@ -1039,7 +1032,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
             </h1>
 
             <p className="text-xl md:text-2xl text-blue-100 mb-16 leading-relaxed">
-              Your personalized business blueprint is ready. Discover your
+              Your personalized business recommendation is ready. Discover your
               AI-powered analysis, personality insights, and complete roadmap to
               success.
             </p>

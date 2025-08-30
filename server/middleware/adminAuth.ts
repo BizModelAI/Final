@@ -20,7 +20,8 @@ setInterval(
     const now = Date.now();
     let cleanedCount = 0;
 
-    for (const [sessionKey, session] of adminSessions.entries()) {
+    const entries = Array.from(adminSessions.entries());
+    for (const [sessionKey, session] of entries) {
       if (now - session.timestamp > ADMIN_SESSION_DURATION) {
         adminSessions.delete(sessionKey);
         cleanedCount++;

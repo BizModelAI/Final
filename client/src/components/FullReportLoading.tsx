@@ -2,6 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import { QuizData } from "../types";
 import { motion } from "framer-motion";
 import { Brain, CheckCircle } from "lucide-react";
+import { AIService } from "../utils/aiService";
+import { businessModelService } from "../utils/businessModelService";
+import { getActionPlanForModel, MOTIVATIONAL_MESSAGE } from "../utils/hardcodedContent";
 
 interface FullReportLoadingProps {
   quizData: QuizData;
@@ -36,14 +39,7 @@ export default function FullReportLoading({
         " Generating full report data with consolidated AI (1 call instead of 4)",
       );
 
-      // Dynamic import to avoid bundle issues
-      const { AIService } = await import("../utils/aiService");
-      const { businessModelService } = await import(
-        "../utils/businessModelService"
-      );
-      const { getActionPlanForModel, MOTIVATIONAL_MESSAGE } = await import(
-        "../utils/hardcodedContent"
-      );
+
 
       const aiService = AIService.getInstance();
 
