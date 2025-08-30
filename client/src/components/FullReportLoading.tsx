@@ -5,6 +5,7 @@ import { Brain, CheckCircle } from "lucide-react";
 import { AIService } from "../utils/aiService";
 import { businessModelService } from "../utils/businessModelService";
 import { getActionPlanForModel, MOTIVATIONAL_MESSAGE } from "../utils/hardcodedContent";
+import { useAIInsights } from "../contexts/AIInsightsContext";
 
 interface FullReportLoadingProps {
   quizData: QuizData;
@@ -24,6 +25,9 @@ export default function FullReportLoading({
   const [isComplete, setIsComplete] = useState(false);
   const [fullReportData, setFullReportData] = useState<any>(null);
   const [apiCallComplete, setApiCallComplete] = useState(false);
+
+  // Get AI insights from Results page context
+  const { aiInsights: resultsPageInsights } = useAIInsights();
 
   const stages = [
     { text: "Analyzing your entrepreneurial profile...", target: 25 },
@@ -76,11 +80,11 @@ export default function FullReportLoading({
 
       // Create final insights object with both AI-generated and hardcoded content
       const insights = {
-        // Use the 3 paragraphs from Results page (already cached) instead of AI-generated summary
-        personalizedSummary: "Analysis will be pulled from Results page cache",
+        // Use the AI-generated content from Results page (already cached)
+        personalizedSummary: resultsPageInsights?.insights?.personalizedSummary || "Analysis will be pulled from Results page cache",
 
-        // AI-generated content from consolidated call
-        customRecommendations: [
+        // Use AI-generated content from Results page instead of hardcoded content
+        customRecommendations: resultsPageInsights?.insights?.customRecommendations || [
           "Focus on your top-scoring business model to maximize success potential",
           "Leverage your strong skills while addressing identified challenges",
           "Start small and scale gradually based on market feedback",
@@ -92,8 +96,8 @@ export default function FullReportLoading({
         personalizedActionPlan: topModelActionPlan,
         motivationalMessage: MOTIVATIONAL_MESSAGE,
 
-        // These are used in FullReport but generated elsewhere or hardcoded
-        successStrategies: [
+        // Use AI-generated content from Results page instead of hardcoded content
+        successStrategies: resultsPageInsights?.insights?.successStrategies || [
           "Focus on your top-scoring business model to maximize success potential",
           "Leverage your strong skills while addressing identified challenges",
           "Start small and scale gradually based on market feedback",
@@ -185,7 +189,7 @@ export default function FullReportLoading({
       setFullReportData(fallbackData);
       setApiCallComplete(true);
     }
-  }, [quizData, userEmail]);
+  }, [quizData, userEmail, resultsPageInsights]);
 
   // Progress animation with smooth stage transitions
   useEffect(() => {

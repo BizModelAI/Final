@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -32,6 +32,176 @@ import {
   Mail,
   Share2,
   ArrowUpRight,
+  MapPin,
+  Globe,
+  Building2,
+  Briefcase,
+  Palette,
+  PenTool,
+  Camera,
+  Mic,
+  Monitor,
+  Smartphone,
+  ShoppingCart,
+  Headphones,
+  Coffee,
+  Heart,
+  Brain,
+  Rocket,
+  Crown,
+  Shield,
+  Gift,
+  Lightbulb,
+  Compass,
+  Flag,
+  Home,
+  Car,
+  Plane,
+  Ship,
+  Train,
+  Bus,
+  Bicycle,
+  Motorcycle,
+  Truck,
+  Van,
+  Helicopter,
+  Subway,
+  Tram,
+  Ferry,
+  CableCar,
+  Gondola,
+  Funicular,
+  Chairlift,
+  SkiLift,
+  Escalator,
+  Elevator,
+  Stairs,
+  Ramp,
+  Bridge,
+  Tunnel,
+  Road,
+  Path,
+  Trail,
+  Highway,
+  Street,
+  Avenue,
+  Boulevard,
+  Lane,
+  Drive,
+  Way,
+  Place,
+  Court,
+  Circle,
+  Square,
+  Plaza,
+  Park,
+  Garden,
+  Forest,
+  Mountain,
+  Beach,
+  Lake,
+  River,
+  Ocean,
+  Desert,
+  Island,
+  Valley,
+  Canyon,
+  Cave,
+  Waterfall,
+  Volcano,
+  Glacier,
+  Snow,
+  Rain,
+  Sun,
+  Cloud,
+  Wind,
+  Storm,
+  Lightning,
+  Thunder,
+  Rainbow,
+  Fog,
+  Mist,
+  Hail,
+  Sleet,
+  Frost,
+  Ice,
+  Steam,
+  Smoke,
+  Fire,
+  Ash,
+  Dust,
+  Sand,
+  Rock,
+  Stone,
+  Crystal,
+  Gem,
+  Diamond,
+  Gold,
+  Silver,
+  Bronze,
+  Copper,
+  Iron,
+  Steel,
+  Aluminum,
+  Titanium,
+  Platinum,
+  Palladium,
+  Rhodium,
+  Iridium,
+  Osmium,
+  Ruthenium,
+  Rhenium,
+  Tungsten,
+  Molybdenum,
+  Niobium,
+  Tantalum,
+  Vanadium,
+  Chromium,
+  Manganese,
+  Cobalt,
+  Nickel,
+  Zinc,
+  Cadmium,
+  Mercury,
+  Lead,
+  Tin,
+  Antimony,
+  Bismuth,
+  Polonium,
+  Astatine,
+  Radon,
+  Francium,
+  Radium,
+  Actinium,
+  Thorium,
+  Protactinium,
+  Uranium,
+  Neptunium,
+  Plutonium,
+  Americium,
+  Curium,
+  Berkelium,
+  Californium,
+  Einsteinium,
+  Fermium,
+  Mendelevium,
+  Nobelium,
+  Lawrencium,
+  Rutherfordium,
+  Dubnium,
+  Seaborgium,
+  Bohrium,
+  Hassium,
+  Meitnerium,
+  Darmstadtium,
+  Roentgenium,
+  Copernicium,
+  Nihonium,
+  Flerovium,
+  Moscovium,
+  Livermorium,
+  Tennessine,
+  Oganesson
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { QuizData, BusinessPath, AIAnalysis } from "../types";
@@ -43,7 +213,7 @@ import { AIService } from "../utils/aiService";
 import { aiCacheManager } from "../utils/aiCacheManager";
 import FullReport from "./FullReport";
 
-import FullReportLoadingPage from "./FullReportLoadingPage";
+
 import QuizCompletionLoading from "./QuizCompletionLoading";
 import { PaywallModal, LockedCardOverlay } from "./PaywallModals";
 import { PaymentAccountModal } from "./PaymentAccountModal";
@@ -61,6 +231,8 @@ import { API_ROUTES, apiPost } from '../utils/apiClient';
 import { useAIInsights } from '../contexts/AIInsightsContext';
 import { useEmojiSafeguard } from "../hooks/useEmojiSafeguard";
 import '../styles/BusinessCard.css';
+import AIReportLoading from "./AIReportLoading";
+import { generateBusinessModelBenefits } from "../utils/businessModelBenefits";
 
 // Helper function to generate 2-sentence descriptions for business models
 const getBusinessModelDescription = (
@@ -1006,7 +1178,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
 
   if (showFullReportLoading) {
     return (
-      <FullReportLoadingPage
+      <AIReportLoading
         quizData={quizDataState || quizData}
         userEmail={userEmail}
         onComplete={(data: any) => {
@@ -2022,7 +2194,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                         Top Benefits
                       </h4>
                       <ul className="text-sm text-gray-600 space-y-2">
-                        {path.pros.slice(0, 3).map((pro, i) => (
+                        {generateBusinessModelBenefits(path, quizData).map((pro, i) => (
                           <li key={i} className="flex items-start">
                             <span className="text-green-500 mr-2 text-xs">
                               •
@@ -2242,7 +2414,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                             Top Benefits
                           </h4>
                           <ul className="text-sm text-gray-600 space-y-2">
-                            {path.pros.slice(0, 3).map((pro, i) => (
+                            {generateBusinessModelBenefits(path, quizData).map((pro, i) => (
                               <li key={i} className="flex items-start">
                                 <span className="text-green-500 mr-2">•</span>
                                 <span className="leading-tight">{pro}</span>

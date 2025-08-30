@@ -199,7 +199,12 @@ interface FullReportProps {
     aiInsights: any;
     allCharacteristics: string[];
     businessFitDescriptions: { [key: string]: string };
-    businessAvoidDescriptions: { [key: string]: string };
+          businessAvoidDescriptions: { [key: string]: string };
+      insights?: {
+        successStrategies?: string[];
+        customRecommendations?: string[];
+        potentialChallenges?: string[];
+      };
   };
   isHistoricalView?: boolean;
 }
@@ -551,6 +556,13 @@ const FullReport: React.FC<FullReportProps> = ({
             "Start small and scale gradually based on market feedback",
             "Build a support network of mentors and fellow entrepreneurs",
           ],
+          // FIXED: Add customRecommendations to match component expectations
+          customRecommendations: insights.personalizedRecommendations || [
+            "Focus on your top-scoring business model to maximize success potential",
+            "Leverage your strong skills while addressing identified challenges",
+            "Start small and scale gradually based on market feedback",
+            "Build a support network of mentors and fellow entrepreneurs",
+          ],
         };
         
         setAiInsights(completeInsights);
@@ -603,6 +615,13 @@ This business path aligns with your ${quizData.workCollaborationPreference} work
           
           // Hardcoded success strategies
           successStrategies: [
+            "Focus on your top-scoring business model to maximize success potential",
+            "Leverage your strong skills while addressing identified challenges",
+            "Start small and scale gradually based on market feedback",
+            "Build a support network of mentors and fellow entrepreneurs",
+          ],
+          // FIXED: Add customRecommendations to match component expectations
+          customRecommendations: insights.personalizedRecommendations || [
             "Focus on your top-scoring business model to maximize success potential",
             "Leverage your strong skills while addressing identified challenges",
             "Start small and scale gradually based on market feedback",
@@ -932,28 +951,42 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
   // Map scoring algorithm IDs to actual businessPath IDs
   const mapScoringIdToBusinessPathId = (scoringId: string): string => {
     const idMapping: Record<string, string> = {
+      // Direct matches - these IDs exist in businessPaths
       "content-creation": "content-creation",
-      freelancing: "freelancing",
+      "freelancing": "freelancing",
       "affiliate-marketing": "affiliate-marketing",
-      // Add more mappings as needed when more business paths are added
-      "online-coaching": "freelancing", // Fallback to available path
-      "youtube-automation": "content-creation", // Fallback to available path
-      "local-service": "freelancing", // Fallback to available path
-      "high-ticket-sales": "freelancing", // Fallback to available path
-      "saas-development": "freelancing", // Fallback to available path
-      "social-media-agency": "content-creation", // Fallback to available path
-      "ai-marketing-agency": "freelancing", // Fallback to available path
-      "digital-services": "freelancing", // Fallback to available path
-      "investing-trading": "affiliate-marketing", // Fallback to available path
-      "online-reselling": "affiliate-marketing", // Fallback to available path
-      "handmade-goods": "content-creation", // Fallback to available path
-      copywriting: "freelancing", // Fallback to available path
-      "virtual-assistant": "freelancing", // Fallback to available path
-      "e-commerce-dropshipping": "freelancing", // Fallback to available path
-      "print-on-demand": "content-creation", // Fallback to available path
+      "online-coaching": "online-coaching",
+      "e-commerce": "e-commerce",
+      "youtube-automation": "youtube-automation",
+      "local-service": "local-service",
+      "high-ticket-sales": "high-ticket-sales",
+      "saas-development": "saas-development",
+      "social-media-agency": "social-media-agency",
+      "ai-marketing-agency": "ai-marketing-agency",
+      "digital-services": "digital-services",
+      "investing-trading": "investing-trading",
+      "copywriting": "copywriting",
+      "virtual-assistant": "virtual-assistant",
+      "online-reselling": "online-reselling",
+      "handmade-goods": "handmade-goods",
+      "amazon-fba": "amazon-fba",
+      "podcasting": "podcasting",
+      "blogging": "blogging",
+      "consulting": "consulting",
+      "real-estate-investing": "real-estate-investing",
+      "online-course-creation": "online-course-creation",
+      "ghostwriting": "ghostwriting",
+      "dropshipping": "dropshipping",
+      
+      // Handle any variations or legacy IDs
+      "e-commerce-dropshipping": "dropshipping",
+      "print-on-demand": "e-commerce",
+      
+      // Fallback for any unmapped IDs
+      "default": "freelancing"
     };
 
-    return idMapping[scoringId] || "freelancing"; // Default fallback
+    return idMapping[scoringId] || idMapping["default"];
   };
 
   const handleGetStarted = (businessId: string) => {
@@ -1166,13 +1199,42 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(
-                      aiInsights?.bestFitCharacteristics || allCharacteristics
-                    ).map((characteristic: string, index: number) => (
-                      <div key={index} className="flex items-center">
-                        <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
-                        <span className="text-gray-700">{characteristic}</span>
-                      </div>
-                    ))}
+                      aiInsights?.bestFitCharacteristics || allCharacteristics || []
+                    ).length > 0 ? (
+                      (aiInsights?.bestFitCharacteristics || allCharacteristics).map((characteristic: string, index: number) => (
+                        <div key={index} className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-gray-700">{characteristic}</span>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback characteristics based on quiz data
+                      [
+                        quizData.selfMotivationLevel >= 4
+                          ? "Highly self-motivated"
+                          : "Moderately self-motivated",
+                        quizData.riskComfortLevel >= 4
+                          ? "High risk tolerance"
+                          : "Moderate risk tolerance",
+                        quizData.techSkillsRating >= 4
+                          ? "Strong tech skills"
+                          : "Adequate tech skills",
+                        quizData.directCommunicationEnjoyment >= 4
+                          ? "Excellent communicator"
+                          : "Good communicator",
+                        quizData.organizationLevel >= 4
+                          ? "Highly organized planner"
+                          : "Flexible approach to planning",
+                        quizData.creativeWorkEnjoyment >= 4
+                          ? "Creative problem solver"
+                          : "Analytical approach to challenges",
+                      ].map((characteristic: string, index: number) => (
+                        <div key={index} className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                          <span className="text-gray-700">{characteristic}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </section>
@@ -1252,7 +1314,12 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                           Key Success Indicators
                         </h3>
                         <ul className="space-y-2">
-                          {aiInsights.successStrategies
+                          {(aiInsights?.successStrategies || preloadedData?.insights?.successStrategies || [
+                            "Focus on your top-scoring business model to maximize success potential",
+                            "Leverage your strong skills while addressing identified challenges",
+                            "Start small and scale gradually based on market feedback",
+                            "Build a support network of mentors and fellow entrepreneurs",
+                          ])
                             ?.slice(0, 4)
                             .map((strategy: string, index: number) => (
                               <li key={index} className="flex items-start">
@@ -1273,7 +1340,12 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                           Personalized Recommendations
                         </h3>
                         <ul className="space-y-2">
-                          {aiInsights.customRecommendations
+                          {(aiInsights?.customRecommendations || preloadedData?.insights?.customRecommendations || [
+                            "Focus on your top-scoring business model to maximize success potential",
+                            "Leverage your strong skills while addressing identified challenges",
+                            "Start small and scale gradually based on market feedback",
+                            "Build a support network of mentors and fellow entrepreneurs",
+                          ])
                             ?.slice(0, 4)
                             .map((rec: string, index: number) => (
                               <li key={index} className="flex items-start">
@@ -1297,7 +1369,12 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                         Potential Challenges
                       </h3>
                       <ul className="space-y-3">
-                        {aiInsights.potentialChallenges?.map(
+                        {(aiInsights?.potentialChallenges || preloadedData?.insights?.potentialChallenges || [
+                          "Initial learning curve may require patience and persistence",
+                          "Income may be inconsistent in the first few months",
+                          "Success requires consistent daily action and follow-through",
+                          "Building a customer base takes time and effort",
+                        ])?.map(
                           (challenge: string, index: number) => (
                             <li key={index} className="flex items-start">
                               <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-1 flex-shrink-0" />
@@ -1407,7 +1484,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                             {index + 1}
                           </div>
                           <h3 className="text-xl font-bold text-gray-900">
-                            {(getSafeEmoji(path.id) || '�') + ' ' + path.name}
+                            {getSafeEmoji(path.id) || ''} {path.name}
                           </h3>
                         </div>
                         <div className="text-2xl font-bold text-blue-600">
@@ -1469,7 +1546,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                           onClick={() => handleGetStarted(path.id)}
                           className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
                         >
-                          Learn More About <span className="emoji">{getSafeEmoji(path.id) || '�'}</span> + ' ' + path.name
+                          Learn More About {path.name}
                         </button>
                       )}
                     </div>
@@ -1512,7 +1589,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                             <AlertTriangle className="h-4 w-4" />
                           </div>
                           <h3 className="text-xl font-bold text-gray-900">
-                            {(getSafeEmoji(path.id) || '�') + ' ' + path.name}
+                            {getSafeEmoji(path.id) || ''} {path.name}
                           </h3>
                         </div>
                         <div className="text-2xl font-bold text-red-600">

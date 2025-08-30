@@ -351,7 +351,7 @@ export const PDFReportFull: React.FC<PDFReportFullProps> = ({
                 </h3>
                 <div className="bg-white p-6 rounded-xl shadow-sm">
                   <h4 className="text-2xl font-bold text-blue-600 mb-2">
-                    {(topThreePaths[0]?.emoji || '�') + ' ' + topThreePaths[0]?.name}
+                    {topThreePaths[0]?.emoji || '💡'} {topThreePaths[0]?.name}
                   </h4>
                   <div className="flex items-center mb-3">
                     <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold">
@@ -472,7 +472,7 @@ export const PDFReportFull: React.FC<PDFReportFullProps> = ({
                       </div>
                       <div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                          {(path.emoji || '�') + ' ' + path.name}
+                          {path.emoji || '💡'} {path.name}
                         </h3>
                         <p className="text-gray-600 text-lg">
                           {path.description}
@@ -784,7 +784,7 @@ export const PDFReportFull: React.FC<PDFReportFullProps> = ({
                         <AlertTriangle className="h-4 w-4" />
                       </div>
                       <h3 className="text-xl font-bold text-gray-900">
-                        {(path.emoji || '�') + ' ' + path.name}
+                        {path.emoji || '💡'} {path.name}
                       </h3>
                     </div>
                     <div className="text-2xl font-bold text-red-600">

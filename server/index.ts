@@ -22,7 +22,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// Add middleware for parsing request bodies
+// Stripe webhook requires the raw body for signature verification
+// Apply raw parser only for the webhook route before JSON body parsing
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+
+// Add middleware for parsing request bodies for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
