@@ -1,30 +1,22 @@
 import { prisma } from '../db.js';
 import { calculateAllBusinessModelMatches } from '../../shared/scoring.js';
 
-export interface BusinessAnalysisData {
-  businessModelScores: any[];
-  topMatches: any[];
-  fitScore: number;
-  analysis: any;
+export interface BusinessModelScore {
+  id: string;
+  name: string;
+  score: number;
+  category: string;
 }
 
-export interface EmailContentData {
-  emailType: 'quiz-results' | 'full-report' | 'welcome';
-  recipient: string;
-  subject: string;
-  htmlContent: string;
-  textContent?: string;
-  emailId?: string;
-}
-
-export interface PersonalizedContentData {
-  contentType: 'benefits' | 'challenges' | 'action-plan' | 'recommendations';
-  content: any;
+export interface BusinessModelScoresData {
+  scores: BusinessModelScore[];
+  topMatches: BusinessModelScore[];
+  overallFitScore: number;
 }
 
 /**
- * Comprehensive content storage service
- * Stores ALL generated content with proper retention policies
+ * FOCUSED Content Storage Service
+ * Only stores what's actually needed and reused
  */
 export class ContentStorageService {
   private static instance: ContentStorageService;
@@ -37,9 +29,13 @@ export class ContentStorageService {
   }
 
   /**
-   * Store business model analysis and scoring
+   * Store business model scores (calculated once, used everywhere)
+   * This is the ONLY thing that needs to be stored because:
+   * - Scores are calculated from quiz data
+   * - Scores are used in UI, emails, reports
+   * - Regenerating scores is expensive (AI calls)
    */
-  async storeBusinessAnalysis(
+  async storeBusinessModelScores(
     quizAttemptId: number,
     quizData: any
   ): Promise<void> {
@@ -47,175 +43,59 @@ export class ContentStorageService {
       // Calculate business model scores
       const businessModelScores = calculateAllBusinessModelMatches(quizData);
       const topMatches = businessModelScores.slice(0, 3);
-      const fitScore = topMatches[0]?.score || 0;
-
-      // Create analysis data
-      const analysisData: BusinessAnalysisData = {
-        businessModelScores,
-        topMatches,
-        fitScore,
-        analysis: {
-          totalModels: businessModelScores.length,
-          topModel: topMatches[0],
-          scoreDistribution: this.getScoreDistribution(businessModelScores),
-          generatedAt: new Date()
-        }
-      };
+      const overallFitScore = topMatches[0]?.score || 0;
 
       // Store in database
-      await prisma.businessAnalysis.upsert({
+      await prisma.businessModelScores.upsert({
         where: { quizAttemptId },
         update: {
-          businessModelScores: analysisData.businessModelScores,
-          topMatches: analysisData.topMatches,
-          fitScore: analysisData.fitScore,
-          analysis: analysisData.analysis,
-          generatedAt: new Date()
+          scores: businessModelScores,
+          topMatches,
+          overallFitScore,
+          calculatedAt: new Date()
         },
         create: {
           quizAttemptId,
-          businessModelScores: analysisData.businessModelScores,
-          topMatches: analysisData.topMatches,
-          fitScore: analysisData.fitScore,
-          analysis: analysisData.analysis
+          scores: businessModelScores,
+          topMatches,
+          overallFitScore
         }
       });
 
-      console.log(`✅ Business analysis stored for quiz attempt ${quizAttemptId}`);
+      console.log(`✅ Business model scores stored for quiz attempt ${quizAttemptId}`);
     } catch (error) {
-      console.error('❌ Failed to store business analysis:', error);
+      console.error('❌ Failed to store business model scores:', error);
       throw error;
     }
   }
 
   /**
-   * Store email content
+   * Get stored business model scores
    */
-  async storeEmailContent(
-    quizAttemptId: number,
-    emailData: EmailContentData
-  ): Promise<void> {
+  async getBusinessModelScores(quizAttemptId: number): Promise<BusinessModelScoresData | null> {
     try {
-      await prisma.emailContent.upsert({
-        where: {
-          quizAttemptId_emailType: {
-            quizAttemptId,
-            emailType: emailData.emailType
-          }
-        },
-        update: {
-          recipient: emailData.recipient,
-          subject: emailData.subject,
-          htmlContent: emailData.htmlContent,
-          textContent: emailData.textContent,
-          emailId: emailData.emailId,
-          sentAt: emailData.emailId ? new Date() : null
-        },
-        create: {
-          quizAttemptId,
-          emailType: emailData.emailType,
-          recipient: emailData.recipient,
-          subject: emailData.subject,
-          htmlContent: emailData.htmlContent,
-          textContent: emailData.textContent,
-          emailId: emailData.emailId,
-          sentAt: emailData.emailId ? new Date() : null
-        }
-      });
-
-      console.log(`✅ Email content stored for quiz attempt ${quizAttemptId}, type: ${emailData.emailType}`);
-    } catch (error) {
-      console.error('❌ Failed to store email content:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Store personalized content
-   */
-  async storePersonalizedContent(
-    quizAttemptId: number,
-    contentType: string,
-    content: any
-  ): Promise<void> {
-    try {
-      await prisma.personalizedContent.upsert({
-        where: {
-          quizAttemptId_contentType: {
-            quizAttemptId,
-            contentType: contentType as any
-          }
-        },
-        update: {
-          content,
-          generatedAt: new Date()
-        },
-        create: {
-          quizAttemptId,
-          contentType: contentType as any,
-          content
-        }
-      });
-
-      console.log(`✅ Personalized content stored for quiz attempt ${quizAttemptId}, type: ${contentType}`);
-    } catch (error) {
-      console.error('❌ Failed to store personalized content:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get stored business analysis
-   */
-  async getBusinessAnalysis(quizAttemptId: number): Promise<BusinessAnalysisData | null> {
-    try {
-      const analysis = await prisma.businessAnalysis.findUnique({
+      const scores = await prisma.businessModelScores.findUnique({
         where: { quizAttemptId }
       });
-      return analysis;
+      return scores;
     } catch (error) {
-      console.error('❌ Failed to get business analysis:', error);
+      console.error('❌ Failed to get business model scores:', error);
       return null;
     }
   }
 
   /**
-   * Get stored email content
+   * Check if scores exist for a quiz attempt
    */
-  async getEmailContent(quizAttemptId: number, emailType: string): Promise<any | null> {
+  async hasBusinessModelScores(quizAttemptId: number): Promise<boolean> {
     try {
-      const emailContent = await prisma.emailContent.findUnique({
-        where: {
-          quizAttemptId_emailType: {
-            quizAttemptId,
-            emailType: emailType as any
-          }
-        }
+      const scores = await prisma.businessModelScores.findUnique({
+        where: { quizAttemptId },
+        select: { id: true }
       });
-      return emailContent;
+      return !!scores;
     } catch (error) {
-      console.error('❌ Failed to get email content:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get stored personalized content
-   */
-  async getPersonalizedContent(quizAttemptId: number, contentType: string): Promise<any | null> {
-    try {
-      const content = await prisma.personalizedContent.findUnique({
-        where: {
-          quizAttemptId_contentType: {
-            quizAttemptId,
-            contentType: contentType as any
-          }
-        }
-      });
-      return content;
-    } catch (error) {
-      console.error('❌ Failed to get personalized content:', error);
-      return null;
+      return false;
     }
   }
 
@@ -269,51 +149,44 @@ export class ContentStorageService {
   }
 
   /**
-   * Get score distribution for analysis
+   * Get storage statistics
    */
-  private getScoreDistribution(scores: any[]): any {
-    const distribution = {
-      excellent: 0, // 90-100
-      good: 0,      // 80-89
-      fair: 0,      // 70-79
-      poor: 0       // 0-69
-    };
-
-    scores.forEach(score => {
-      if (score.score >= 90) distribution.excellent++;
-      else if (score.score >= 80) distribution.good++;
-      else if (score.score >= 70) distribution.fair++;
-      else distribution.poor++;
-    });
-
-    return distribution;
-  }
-
-  /**
-   * Store complete quiz results (all content at once)
-   */
-  async storeCompleteQuizResults(
-    quizAttemptId: number,
-    quizData: any,
-    emailData: EmailContentData,
-    personalizedData: PersonalizedContentData[]
-  ): Promise<void> {
+  async getStorageStats(): Promise<any> {
     try {
-      // Store business analysis
-      await this.storeBusinessAnalysis(quizAttemptId, quizData);
+      const totalAttempts = await prisma.quizAttempt.count();
+      const withScores = await prisma.businessModelScores.count();
+      const guestAttempts = await prisma.quizAttempt.count({
+        where: {
+          userId: null,
+          sessionId: null
+        }
+      });
+      const tempAttempts = await prisma.quizAttempt.count({
+        where: {
+          user: {
+            isTemporary: true
+          }
+        }
+      });
+      const paidAttempts = await prisma.quizAttempt.count({
+        where: {
+          user: {
+            isPaid: true
+          }
+        }
+      });
 
-      // Store email content
-      await this.storeEmailContent(quizAttemptId, emailData);
-
-      // Store personalized content
-      for (const data of personalizedData) {
-        await this.storePersonalizedContent(quizAttemptId, data.contentType, data.content);
-      }
-
-      console.log(`✅ Complete quiz results stored for attempt ${quizAttemptId}`);
+      return {
+        totalAttempts,
+        withScores,
+        guestAttempts,
+        tempAttempts,
+        paidAttempts,
+        scoreCoverage: totalAttempts > 0 ? Math.round((withScores / totalAttempts) * 100) : 0
+      };
     } catch (error) {
-      console.error('❌ Failed to store complete quiz results:', error);
-      throw error;
+      console.error('❌ Failed to get storage stats:', error);
+      return {};
     }
   }
 }

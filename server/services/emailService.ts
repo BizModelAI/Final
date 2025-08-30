@@ -348,20 +348,12 @@ export class EmailService {
       const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
       const html = generateUnpaidEmailHtml(quizData, "user@example.com", scoredBusinessModels);
       
-      // Store the generated content if we have a quiz attempt ID
+      // Store business model scores if we have a quiz attempt ID
       if (quizAttemptId) {
         const contentStorage = ContentStorageService.getInstance();
         
-        // Store business analysis
-        await contentStorage.storeBusinessAnalysis(quizAttemptId, quizData);
-        
-        // Store email content
-        await contentStorage.storeEmailContent(quizAttemptId, {
-          emailType: 'quiz-results',
-          recipient: "user@example.com",
-          subject: 'Your BizModelAI Quiz Results',
-          htmlContent: html
-        });
+        // Only store the scores - emails can be regenerated from this data
+        await contentStorage.storeBusinessModelScores(quizAttemptId, quizData);
       }
       
       return html;
