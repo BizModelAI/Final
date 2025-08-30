@@ -18,19 +18,41 @@ function getTopBusinessPaths(quizData, businessModelScores) {
     }
     
     try {
+        // Import business paths data to get rich descriptions
+        const { businessPaths } = require('../../shared/businessPaths.js');
+        
         // Use the pre-calculated business model scores passed from the email service
         const topPaths = businessModelScores
             .sort((a, b) => b.score - a.score)
             .slice(0, 3)
-            .map(model => ({
-                id: model.id,
-                name: model.name,
-                emoji: model.emoji || '💡',
-                fitScore: Math.round(model.score),
-                pros: model.pros ? model.pros.slice(0, 3) : ['High potential', 'Good fit', 'Scalable'],
-                description: model.description || 'A business model that aligns well with your skills and preferences.',
-                detailedDescription: model.detailedDescription || model.description || 'A business model that aligns well with your skills and preferences.'
-            }));
+            .map(model => {
+                // Find the corresponding business path with rich data
+                const businessPath = businessPaths.find(path => path.id === model.id);
+                
+                if (businessPath) {
+                    // Use the rich business path data
+                    return {
+                        id: model.id,
+                        name: model.name,
+                        emoji: businessPath.emoji || '💡',
+                        fitScore: Math.round(model.score),
+                        pros: businessPath.pros ? businessPath.pros.slice(0, 3) : ['High potential', 'Good fit', 'Scalable'],
+                        description: businessPath.description || 'A business model that aligns well with your skills and preferences.',
+                        detailedDescription: businessPath.detailedDescription || businessPath.description || 'A business model that aligns well with your skills and preferences.'
+                    };
+                } else {
+                    // Fallback if business path not found
+                    return {
+                        id: model.id,
+                        name: model.name,
+                        emoji: '💡',
+                        fitScore: Math.round(model.score),
+                        pros: ['High potential', 'Good fit', 'Scalable'],
+                        description: 'A business model that aligns well with your skills and preferences.',
+                        detailedDescription: 'A business model that aligns well with your skills and preferences.'
+                    };
+                }
+            });
         
         return topPaths;
     } catch (error) {
