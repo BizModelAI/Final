@@ -1,10 +1,13 @@
 // New email templates based on React components
-export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: number): Promise<string> {
+export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
   const { businessPaths } = await import('../../shared/businessPaths.js');
-  const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
   
-  // Calculate actual fit scores based on quiz data
-  const calculatedMatches = calculateAllBusinessModelMatches(quizData);
+  // Use pre-calculated scores if provided, otherwise calculate them
+  let calculatedMatches = preCalculatedScores;
+  if (!calculatedMatches) {
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+  }
   
   // Map the calculated scores to the business paths
   const topPaths = businessPaths.slice(0, 3).map(path => {
@@ -821,9 +824,24 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
   `;
 }
 
-export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: number): Promise<string> {
+export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
   const { businessPaths } = await import('../../shared/businessPaths.js');
-  const topPaths = businessPaths.slice(0, 3);
+  
+  // Use pre-calculated scores if provided, otherwise calculate them
+  let calculatedMatches = preCalculatedScores;
+  if (!calculatedMatches) {
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+  }
+  
+  // Map the calculated scores to the business paths
+  const topPaths = businessPaths.slice(0, 3).map(path => {
+    const match = calculatedMatches.find(m => m.id === path.id);
+    return {
+      ...path,
+      fitScore: match ? match.score : 85 // Fallback to 85% if no match found
+    };
+  });
   
   function getPersonalizedSnapshot(quizData: any): string[] {
     // Same logic as above

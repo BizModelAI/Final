@@ -341,8 +341,10 @@ export class EmailService {
   }
 
   private async generateQuizResultsHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
-    const { generatePreviewEmailHTML } = await import('./newEmailTemplates.js');
-    return generatePreviewEmailHTML(quizData, quizAttemptId);
+    // Use the centralized email template system
+    const { generateUnpaidEmailHtml } = await import("../utils/reactToHtml.js");
+    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+    return generateUnpaidEmailHtml(quizData, "user@example.com", scoredBusinessModels);
 
     return `
       <!DOCTYPE html>
@@ -991,8 +993,10 @@ export class EmailService {
   }
 
   private async generateFullReportHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
-    const { generatePaidEmailHTML } = await import('./newEmailTemplates.js');
-    return generatePaidEmailHTML(quizData, quizAttemptId);
+    // Use the centralized email template system
+    const { generatePaidEmailHtml } = await import("../utils/reactToHtml.js");
+    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+    return generatePaidEmailHtml(quizData, "user@example.com", scoredBusinessModels);
   }
 
   private generateContactFormNotificationHTML(formData: {
