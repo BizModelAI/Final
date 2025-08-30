@@ -43,6 +43,10 @@ model QuizAttempt {
   payments    Payment[]
   user        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
   reportViews ReportView[]
+  // NEW: Store all generated content
+  businessAnalysis BusinessAnalysis[]
+  emailContent    EmailContent[]
+  personalizedContent PersonalizedContent[]
 
   @@map("quiz_attempts")
 }
@@ -59,6 +63,54 @@ model AiContent {
 
   @@unique([quizAttemptId, contentType])
   @@map("ai_content")
+}
+
+// NEW: Store business model analysis and scoring
+model BusinessAnalysis {
+  id            Int         @id @default(autoincrement())
+  quizAttemptId Int         @map("quiz_attempt_id")
+  businessModelScores Json  @map("business_model_scores") // Array of scored business models
+  topMatches    Json        @map("top_matches") // Top 3 business model matches
+  fitScore      Float       @map("fit_score") // Overall fit score
+  analysis      Json        // Detailed analysis and reasoning
+  generatedAt   DateTime    @default(now()) @map("generated_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([quizAttemptId])
+  @@map("business_analysis")
+}
+
+// NEW: Store all email content
+model EmailContent {
+  id            Int         @id @default(autoincrement())
+  quizAttemptId Int         @map("quiz_attempt_id")
+  emailType     String      @map("email_type") // 'quiz-results', 'full-report', 'welcome'
+  recipient     String      // Email address
+  subject       String      // Email subject
+  htmlContent   String      @map("html_content") // Full HTML email
+  textContent   String?     @map("text_content") // Plain text version
+  sentAt        DateTime?   @map("sent_at") // When email was sent
+  emailId       String?     @map("email_id") // External email service ID
+  createdAt     DateTime    @default(now()) @map("created_at")
+  quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([quizAttemptId, emailType])
+  @@map("email_content")
+}
+
+// NEW: Store personalized content and recommendations
+model PersonalizedContent {
+  id            Int         @id @default(autoincrement())
+  quizAttemptId Int         @map("quiz_attempt_id")
+  contentType   String      @map("content_type") // 'benefits', 'challenges', 'action-plan'
+  content       Json        // Personalized content data
+  generatedAt   DateTime    @default(now()) @map("generated_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([quizAttemptId, contentType])
+  @@map("personalized_content")
 }
 
 model Payment {
