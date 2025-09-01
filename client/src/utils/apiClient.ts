@@ -176,3 +176,10 @@ export async function apiPatch<T = any, B = any>(
 
 // Export the error class for use in components
 export { ApiError };
+
+// Add missing browser globals
+declare global {
+  interface Window {
+    Response: typeof Response;
+  }
+}

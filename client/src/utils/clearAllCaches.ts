@@ -119,6 +119,13 @@ export function cleanAndOptimizeStorage() {
   console.log("Storage cleaned and optimized");
 }
 
+// Add missing browser globals
+declare global {
+  interface Window {
+    caches: CacheStorage;
+  }
+}
+
 // Make functions available globally for debugging
 if (typeof window !== 'undefined') {
   (window as any).clearAllCaches = clearAllCaches;
