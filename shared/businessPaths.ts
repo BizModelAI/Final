@@ -69,22 +69,88 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Choose content niche",
-        "Set up equipment",
-        "Create content calendar",
-        "Post consistently",
+        {
+          title: "Foundation Setup (Week 1-2)",
+          steps: [
+            "Research and choose your content niche (lifestyle, tech, fitness, etc.)",
+            "Set up professional social media accounts (TikTok, Instagram, YouTube)",
+            "Invest in basic equipment: smartphone with good camera, ring light ($50-100)",
+            "Create a content calendar with 3-5 posts per week",
+            "Study top creators in your niche and analyze their content style"
+          ],
+          timeline: "1-2 weeks",
+          budget: "$50-100",
+          successMetrics: "Consistent posting schedule, 100+ followers"
+        },
+        {
+          title: "Content Creation & Consistency (Week 3-8)",
+          steps: [
+            "Post 3-5 times per week following your content calendar",
+            "Experiment with different content formats (videos, photos, stories)",
+            "Engage with your audience by responding to comments within 2 hours",
+            "Use trending hashtags and sounds to increase discoverability",
+            "Collaborate with 2-3 other creators in your niche"
+          ],
+          timeline: "6 weeks",
+          budget: "$0-50",
+          successMetrics: "500+ followers, 5%+ engagement rate"
+        }
       ],
       phase2: [
-        "Engage with audience",
-        "Collaborate with others",
-        "Optimize for algorithms",
-        "Track analytics",
+        {
+          title: "Audience Growth & Engagement (Month 2-4)",
+          steps: [
+            "Implement a consistent posting schedule (same times daily)",
+            "Create signature content series that your audience expects",
+            "Engage with 50+ accounts daily (comments, likes, shares)",
+            "Analyze your top-performing content and replicate success patterns",
+            "Start networking with brands and other creators in your niche"
+          ],
+          timeline: "2-3 months",
+          budget: "$100-300",
+          successMetrics: "5K+ followers, 8%+ engagement rate, brand inquiries"
+        },
+        {
+          title: "Monetization Strategy (Month 3-6)",
+          steps: [
+            "Apply for TikTok Creator Fund and YouTube Partner Program",
+            "Create a media kit showcasing your audience demographics",
+            "Reach out to 10+ brands in your niche for collaboration opportunities",
+            "Set up affiliate marketing partnerships with relevant products",
+            "Launch your first digital product (e-book, course, template)"
+          ],
+          timeline: "3-4 months",
+          budget: "$200-500",
+          successMetrics: "First $500+ month, 3+ brand partnerships"
+        }
       ],
       phase3: [
-        "Monetize through ads",
-        "Secure sponsorships",
-        "Launch own products",
-        "Expand to new platforms",
+        {
+          title: "Scale & Diversify (Month 6-12)",
+          steps: [
+            "Expand to 2-3 additional platforms (LinkedIn, Twitter, Pinterest)",
+            "Launch a membership program or exclusive content for super fans",
+            "Create and sell your own branded merchandise",
+            "Host virtual events or workshops for your community",
+            "Build an email list and start email marketing campaigns"
+          ],
+          timeline: "6 months",
+          budget: "$500-1000",
+          successMetrics: "$2K+ monthly income, 50K+ total followers"
+        },
+        {
+          title: "Business Expansion (Year 1+)",
+          steps: [
+            "Hire virtual assistants to help with content creation and management",
+            "Launch your own agency to manage other creators",
+            "Create online courses teaching others your content creation methods",
+            "Secure speaking engagements and media appearances",
+            "Invest in advanced equipment and studio setup"
+          ],
+          timeline: "Ongoing",
+          budget: "$1000+",
+          successMetrics: "$5K+ monthly income, multiple income streams"
+        }
       ],
     },
   },
@@ -156,22 +222,88 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Identify your skills",
-        "Create portfolio",
-        "Set up profiles on platforms",
-        "Apply for first projects",
+        {
+          title: "Platform Setup & Portfolio (Week 1-2)",
+          steps: [
+            "Create professional profiles on Upwork, Fiverr, and 99designs",
+            "Build a portfolio showcasing your best 5-10 pieces of work",
+            "Research competitive rates in your niche and set initial pricing",
+            "Set up a professional email and business phone number",
+            "Create a simple website or landing page to showcase your services"
+          ],
+          timeline: "1-2 weeks",
+          budget: "$0-100",
+          successMetrics: "3+ platform profiles, portfolio with 10+ samples, first client inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 3-6)",
+          steps: [
+            "Apply to 20+ relevant job postings daily with personalized proposals",
+            "Accept 2-3 small projects to build your rating and reviews",
+            "Deliver exceptional work and ask for testimonials",
+            "Establish clear communication protocols with clients",
+            "Create templates for common project types to speed up delivery"
+          ],
+          timeline: "4 weeks",
+          budget: "$0-50",
+          successMetrics: "First 3-5 completed projects, 4.5+ star rating, 2+ testimonials"
+        }
       ],
       phase2: [
-        "Deliver quality work",
-        "Collect testimonials",
-        "Raise your rates",
-        "Build repeat clients",
+        {
+          title: "Brand Building & Client Relationships (Month 2-4)",
+          steps: [
+            "Develop a personal brand with consistent visual identity",
+            "Create service packages with clear pricing tiers (Basic, Standard, Premium)",
+            "Build an email list of past clients and prospects",
+            "Network with other freelancers in your niche",
+            "Ask satisfied clients for referrals and repeat business"
+          ],
+          timeline: "2-3 months",
+          budget: "$100-300",
+          successMetrics: "Personal brand established, 3 pricing tiers, 10+ repeat clients"
+        },
+        {
+          title: "Service Expansion & Rate Increases (Month 3-6)",
+          steps: [
+            "Gradually increase your rates by 10-20% every 3 months",
+            "Add complementary services to your offerings",
+            "Create retainer packages for long-term clients",
+            "Develop case studies showcasing your best work",
+            "Start targeting higher-value clients and projects"
+          ],
+          timeline: "3-4 months",
+          budget: "$200-500",
+          successMetrics: "20% rate increase, 5+ retainer clients, $2K+ monthly income"
+        }
       ],
       phase3: [
-        "Specialize in high-value niches",
-        "Create passive income streams",
-        "Build a personal brand",
-        "Consider hiring subcontractors",
+        {
+          title: "Scale & Team Building (Month 6-12)",
+          steps: [
+            "Hire subcontractors or virtual assistants for routine tasks",
+            "Create systems and processes to manage multiple projects",
+            "Focus on high-value, long-term client relationships",
+            "Develop passive income streams (courses, templates, products)",
+            "Build a referral network with other professionals"
+          ],
+          timeline: "6 months",
+          budget: "$500-1000",
+          successMetrics: "Team of 2-3 people, $5K+ monthly income, 80% repeat clients"
+        },
+        {
+          title: "Agency Launch & Business Expansion (Year 1+)",
+          steps: [
+            "Launch your own agency or consultancy firm",
+            "Hire full-time employees for core services",
+            "Develop proprietary methodologies and frameworks",
+            "Secure enterprise-level clients and contracts",
+            "Create multiple service lines and revenue streams"
+          ],
+          timeline: "Ongoing",
+          budget: "$1000+",
+          successMetrics: "Agency with 5+ employees, $20K+ monthly revenue, enterprise clients"
+        }
       ],
     },
   },
@@ -254,22 +386,88 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Choose your niche",
-        "Research affiliate programs",
-        "Create content platform",
-        "Start creating valuable content",
+        {
+          title: "Niche Selection & Platform Setup (Week 1-3)",
+          steps: [
+            "Research and choose a profitable niche (health, finance, tech, lifestyle)",
+            "Set up a WordPress blog or YouTube channel as your primary platform",
+            "Research top affiliate programs in your niche (Amazon Associates, ShareASale)",
+            "Create 10-15 pieces of valuable content to establish authority",
+            "Set up Google Analytics and basic tracking tools"
+          ],
+          timeline: "3 weeks",
+          budget: "$50-200",
+          successMetrics: "Platform established, 15+ content pieces, first affiliate program approval"
+        },
+        {
+          title: "Content Creation & Audience Building (Week 4-12)",
+          steps: [
+            "Publish 3-5 high-quality content pieces weekly",
+            "Focus on SEO optimization for organic traffic growth",
+            "Create product reviews and comparison guides",
+            "Build an email list with lead magnets and opt-in forms",
+            "Engage with your audience through comments and social media"
+          ],
+          timeline: "8 weeks",
+          budget: "$100-300",
+          successMetrics: "100+ email subscribers, 1000+ monthly visitors, 5+ affiliate links active"
+        }
       ],
       phase2: [
-        "Build email list",
-        "Join affiliate programs",
-        "Create product reviews",
-        "Optimize for SEO",
+        {
+          title: "Monetization & Optimization (Month 3-6)",
+          steps: [
+            "Join 3-5 additional affiliate programs in your niche",
+            "Create detailed product review content with affiliate links",
+            "Implement email marketing campaigns to promote products",
+            "Use A/B testing to optimize conversion rates",
+            "Focus on high-commission products and recurring revenue"
+          ],
+          timeline: "3-4 months",
+          budget: "$200-500",
+          successMetrics: "First $100+ affiliate income month, 1000+ email subscribers, 10+ active programs"
+        },
+        {
+          title: "Traffic Scaling & Brand Building (Month 4-8)",
+          steps: [
+            "Expand to additional platforms (YouTube, TikTok, Pinterest)",
+            "Create signature content series that drive consistent traffic",
+            "Build relationships with product creators and brands",
+            "Develop your personal brand and authority in the niche",
+            "Start experimenting with paid advertising (Facebook, Google)"
+          ],
+          timeline: "4-5 months",
+          budget: "$300-800",
+          successMetrics: "5000+ monthly visitors, $500+ monthly income, personal brand established"
+        }
       ],
       phase3: [
-        "Scale successful campaigns",
-        "Diversify income streams",
-        "Build personal brand",
-        "Consider paid advertising",
+        {
+          title: "Scale & Diversify (Month 8-12)",
+          steps: [
+            "Launch your own digital products (courses, e-books, templates)",
+            "Create a membership site for exclusive content and community",
+            "Hire virtual assistants to help with content creation",
+            "Develop strategic partnerships with major brands",
+            "Expand to international markets and new niches"
+          ],
+          timeline: "4-5 months",
+          budget: "$500-1500",
+          successMetrics: "$2K+ monthly income, 10K+ monthly visitors, multiple income streams"
+        },
+        {
+          title: "Business Expansion & Automation (Year 1+)",
+          steps: [
+            "Build an affiliate marketing agency or network",
+            "Create automated systems for content creation and promotion",
+            "Develop proprietary tools and methodologies",
+            "Secure exclusive affiliate partnerships and deals",
+            "Invest in advanced analytics and automation tools"
+          ],
+          timeline: "Ongoing",
+          budget: "$1000+",
+          successMetrics: "$10K+ monthly income, agency with team, automated systems"
+        }
       ],
     },
   },
@@ -341,22 +539,88 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Define your expertise area",
-        "Create tutor profiles",
-        "Set competitive rates",
-        "Get first students",
+        {
+          title: "Expertise Definition & Platform Setup (Week 1-2)",
+          steps: [
+            "Define your specific coaching niche and target audience",
+            "Create professional profiles on coaching platforms (Wyzant, Preply, iTalki)",
+            "Set up Zoom, Google Meet, and scheduling tools (Calendly)",
+            "Create a simple website or landing page showcasing your services",
+            "Set competitive initial rates based on market research"
+          ],
+          timeline: "1-2 weeks",
+          budget: "$0-100",
+          successMetrics: "3+ platform profiles, website established, first student inquiry"
+        },
+        {
+          title: "First Students & Service Delivery (Week 3-6)",
+          steps: [
+            "Accept your first 2-3 students at introductory rates",
+            "Create structured lesson plans and teaching materials",
+            "Conduct coaching sessions and collect feedback",
+            "Ask satisfied students for testimonials and referrals",
+            "Refine your coaching methodology based on student results"
+          ],
+          timeline: "4 weeks",
+          budget: "$0-50",
+          successMetrics: "First 3-5 students, 4.5+ star rating, 2+ testimonials"
+        }
       ],
       phase2: [
-        "Build reputation and reviews",
-        "Increase rates gradually",
-        "Develop teaching materials",
-        "Expand subject areas",
+        {
+          title: "Reputation Building & Rate Increases (Month 2-4)",
+          steps: [
+            "Gradually increase your rates by 15-25% every 2 months",
+            "Develop comprehensive teaching materials and resources",
+            "Build a portfolio of successful student outcomes",
+            "Expand to additional coaching platforms and directories",
+            "Create free content (blog posts, videos) to attract students"
+          ],
+          timeline: "2-3 months",
+          budget: "$100-300",
+          successMetrics: "10+ students, 20% rate increase, portfolio established"
+        },
+        {
+          title: "Service Expansion & Brand Building (Month 3-6)",
+          steps: [
+            "Add group coaching sessions and workshops",
+            "Create signature coaching programs and packages",
+            "Develop your personal brand and authority in your niche",
+            "Build an email list of prospects and past students",
+            "Start networking with other coaches and professionals"
+          ],
+          timeline: "3-4 months",
+          budget: "$200-500",
+          successMetrics: "Group sessions launched, personal brand established, $2K+ monthly income"
+        }
       ],
       phase3: [
-        "Create online courses",
-        "Build personal brand",
-        "Hire other tutors",
-        "Launch tutoring agency",
+        {
+          title: "Scale & Product Creation (Month 6-12)",
+          steps: [
+            "Create and launch your first online course or digital product",
+            "Develop a membership program for ongoing student support",
+            "Hire assistant coaches or virtual assistants",
+            "Secure speaking engagements and media appearances",
+            "Build strategic partnerships with complementary services"
+          ],
+          timeline: "6 months",
+          budget: "$500-1500",
+          successMetrics: "First course launched, membership program active, $5K+ monthly income"
+        },
+        {
+          title: "Agency Launch & Business Expansion (Year 1+)",
+          steps: [
+            "Launch your own coaching agency or training company",
+            "Hire full-time coaches and support staff",
+            "Develop proprietary coaching methodologies and frameworks",
+            "Create multiple revenue streams (courses, consulting, speaking)",
+            "Expand to corporate training and enterprise clients"
+          ],
+          timeline: "Ongoing",
+          budget: "$1000+",
+          successMetrics: "Agency with 5+ coaches, $15K+ monthly revenue, corporate clients"
+        }
       ],
     },
   },
@@ -435,22 +699,88 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Research product niches",
-        "Set up online store",
-        "Source initial products",
-        "Create product listings",
+        {
+          title: "Product Research & Store Setup (Week 1-4)",
+          steps: [
+            "Research profitable product niches using tools like Jungle Scout or Helium 10",
+            "Validate product demand through Google Trends and social media research",
+            "Set up Shopify store with professional theme and essential apps",
+            "Source initial products from reliable suppliers (AliExpress, local manufacturers)",
+            "Create compelling product listings with high-quality images and descriptions"
+          ],
+          timeline: "4 weeks",
+          budget: "$500-2000",
+          successMetrics: "Store launched, 10+ products listed, first supplier relationships"
+        },
+        {
+          title: "Launch & Initial Marketing (Week 5-12)",
+          steps: [
+            "Launch store with social media announcement and email list building",
+            "Set up Google Analytics, Facebook Pixel, and conversion tracking",
+            "Start with low-budget Facebook and Instagram ads ($20-50/day)",
+            "Implement email marketing with welcome series and abandoned cart flows",
+            "Focus on SEO optimization for organic traffic growth"
+          ],
+          timeline: "8 weeks",
+          budget: "$1000-3000",
+          successMetrics: "First 10+ sales, 100+ email subscribers, $100+ daily ad spend"
+        }
       ],
       phase2: [
-        "Launch marketing campaigns",
-        "Optimize store conversion",
-        "Build customer base",
-        "Expand product line",
+        {
+          title: "Optimization & Customer Acquisition (Month 3-6)",
+          steps: [
+            "Analyze conversion data and optimize product pages and checkout flow",
+            "Scale successful ad campaigns and test new marketing channels",
+            "Build customer loyalty through email marketing and retargeting",
+            "Expand product line based on customer feedback and sales data",
+            "Implement customer service systems and review management"
+          ],
+          timeline: "3-4 months",
+          budget: "$2000-8000",
+          successMetrics: "100+ customers, 3%+ conversion rate, $5K+ monthly revenue"
+        },
+        {
+          title: "Scaling & Brand Building (Month 4-8)",
+          steps: [
+            "Increase advertising budget to $200-500/day across multiple channels",
+            "Develop private label products and exclusive supplier relationships",
+            "Build brand awareness through influencer partnerships and PR",
+            "Launch customer loyalty program and subscription services",
+            "Expand to additional sales channels (Amazon, eBay, wholesale)"
+          ],
+          timeline: "4-5 months",
+          budget: "$5000-15000",
+          successMetrics: "$20K+ monthly revenue, 500+ customers, brand recognition"
+        }
       ],
       phase3: [
-        "Scale advertising spend",
-        "Develop private label products",
-        "Build brand loyalty",
-        "Explore new markets",
+        {
+          title: "Scale & Diversify (Month 8-12)",
+          steps: [
+            "Launch multiple product lines and expand to new niches",
+            "Develop automated systems for inventory management and customer service",
+            "Hire team members for customer service, marketing, and operations",
+            "Create wholesale and B2B sales channels",
+            "Invest in advanced analytics and marketing automation tools"
+          ],
+          timeline: "4-5 months",
+          budget: "$10000-25000",
+          successMetrics: "$50K+ monthly revenue, multiple product lines, automated systems"
+        },
+        {
+          title: "Business Expansion & Exit Strategy (Year 1+)",
+          steps: [
+            "Expand to international markets and multiple store locations",
+            "Develop proprietary products and intellectual property",
+            "Acquire complementary businesses or merge with competitors",
+            "Build a strong brand that can be franchised or sold",
+            "Consider exit strategies (IPO, acquisition, private equity)"
+          ],
+          timeline: "Ongoing",
+          budget: "$25000+",
+          successMetrics: "$100K+ monthly revenue, international presence, exit valuation"
+        }
       ],
     },
   },
@@ -521,24 +851,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["YouTube automation courses", "Video marketing guides"],
       tools: ["TubeBuddy", "VidIQ", "Canva", "Murf AI"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Research profitable niches",
-        "Create channel and branding",
-        "Develop content strategy",
-        "Upload first videos",
+        {
+          title: "Channel Research & Setup (Week 1-3)",
+          steps: [
+            "Research profitable niches with low competition and high CPM",
+            "Set up YouTube channel with professional branding and description",
+            "Create content calendar for first 30 videos",
+            "Set up YouTube Studio and analytics tracking",
+            "Research trending topics and keywords in your niche",
+          ],
+          timeline: "3 weeks",
+          budget: "$100-300",
+          successMetrics: "Channel created, content calendar ready, first video published"
+        },
+        {
+          title: "Content Creation & Publishing (Week 4-12)",
+          steps: [
+            "Create and publish 2-3 videos per week consistently",
+            "Use AI voice tools and stock footage for content creation",
+            "Implement SEO optimization with targeted keywords",
+            "Create engaging thumbnails and titles",
+            "Build initial audience through social media promotion",
+          ],
+          timeline: "8 weeks",
+          budget: "$200-500",
+          successMetrics: "20+ videos published, 100+ subscribers, first monetization milestone"
+        },
       ],
       phase2: [
-        "Optimize for YouTube SEO",
-        "Build outsourcing team",
-        "Scale content production",
-        "Apply for monetization",
+        {
+          title: "Monetization & Audience Growth (Month 3-6)",
+          steps: [
+            "Apply for YouTube Partner Program once eligible",
+            "Implement mid-roll ads and optimize ad placement",
+            "Create sponsored content opportunities with brands",
+            "Build email list and implement affiliate marketing",
+            "Analyze performance data and optimize content strategy",
+          ],
+          timeline: "3-4 months",
+          budget: "$500-1000",
+          successMetrics: "1000+ subscribers, first $100+ month, 3+ brand partnerships"
+        },
+        {
+          title: "Scaling & Automation (Month 4-8)",
+          steps: [
+            "Hire video editors and content creators",
+            "Implement automated publishing schedules",
+            "Expand to multiple channels in different niches",
+            "Develop content templates and systems",
+            "Create merchandise and digital products",
+          ],
+          timeline: "4-5 months",
+          budget: "$1000-3000",
+          successMetrics: "5000+ subscribers, $500+ monthly income, 3+ channels"
+        },
       ],
       phase3: [
-        "Launch multiple channels",
-        "Diversify revenue streams",
-        "Build automation systems",
-        "Scale to 6-figure business",
+        {
+          title: "Multi-Channel Empire (Month 8-12)",
+          steps: [
+            "Launch 5-10 additional channels in profitable niches",
+            "Develop proprietary content creation systems",
+            "Hire full-time team for content management",
+            "Create online courses teaching YouTube automation",
+            "Build a network of content creators and partners",
+          ],
+          timeline: "4-5 months",
+          budget: "$3000-8000",
+          successMetrics: "10+ channels, $2K+ monthly income, automated systems"
+        },
+        {
+          title: "Business Expansion & Exit Strategy (Year 1+)",
+          steps: [
+            "Launch YouTube automation agency for other creators",
+            "Develop proprietary tools and software",
+            "Acquire existing channels and grow them",
+            "Create multiple revenue streams beyond YouTube",
+            "Consider selling channels or entire business",
+          ],
+          timeline: "Ongoing",
+          budget: "$8000+",
+          successMetrics: "Agency with 20+ channels, $10K+ monthly income, exit options"
+        },
       ],
     },
   },
@@ -615,24 +1011,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Local business guides", "Service industry training"],
       tools: ["Google My Business", "Square", "QuickBooks", "Calendly"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Define your service offering",
-        "Get necessary licenses/insurance",
-        "Create Google My Business",
-        "Get first customers",
+        {
+          title: "Service Research & Setup (Week 1-3)",
+          steps: [
+            "Research profitable local service niches in your area",
+            "Set up business registration and insurance",
+            "Create professional website and service listings",
+            "Set up business phone and communication systems",
+            "Research local competition and pricing",
+          ],
+          timeline: "3 weeks",
+          budget: "$500-1500",
+          successMetrics: "Business registered, website launched, first service inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 4-8)",
+          steps: [
+            "Reach out to 100+ local businesses and homeowners",
+            "Offer discounted rates for first 5-10 clients",
+            "Deliver exceptional service and collect testimonials",
+            "Build relationships with local suppliers",
+            "Create service delivery checklists and processes",
+          ],
+          timeline: "5 weeks",
+          budget: "$300-800",
+          successMetrics: "First 10 clients, 4.5+ star rating, 5+ testimonials"
+        },
       ],
       phase2: [
-        "Build customer reviews",
-        "Expand service offerings",
-        "Implement booking system",
-        "Increase rates gradually",
+        {
+          title: "Local Market Penetration (Month 2-4)",
+          steps: [
+            "Implement local SEO and Google My Business optimization",
+            "Build relationships with local business associations",
+            "Create referral programs with satisfied clients",
+            "Develop service packages for different customer segments",
+            "Start local advertising and community involvement",
+          ],
+          timeline: "2-3 months",
+          budget: "$800-2000",
+          successMetrics: "25+ clients, local market presence, $8K+ monthly revenue"
+        },
+        {
+          title: "Service Expansion & Team Building (Month 3-6)",
+          steps: [
+            "Add complementary services to your offerings",
+            "Hire first employees or subcontractors",
+            "Develop standardized service delivery processes",
+            "Create customer loyalty programs",
+            "Build partnerships with local businesses",
+          ],
+          timeline: "3-4 months",
+          budget: "$1500-4000",
+          successMetrics: "40+ clients, team of 3+ people, $15K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Hire additional workers",
-        "Expand service area",
-        "Add complementary services",
-        "Build referral system",
+        {
+          title: "Scale & Diversify (Month 6-12)",
+          steps: [
+            "Expand to multiple service areas or cities",
+            "Launch franchise or licensing opportunities",
+            "Develop proprietary service methodologies",
+            "Create online booking and management systems",
+            "Build a network of service providers",
+          ],
+          timeline: "6 months",
+          budget: "$4000-12000",
+          successMetrics: "100+ clients, multiple locations, $30K+ monthly revenue"
+        },
+        {
+          title: "Business Empire & Exit Strategy (Year 1+)",
+          steps: [
+            "Launch multiple service businesses in different niches",
+            "Develop enterprise-level client relationships",
+            "Create training programs for other service providers",
+            "Build a portfolio of local service businesses",
+            "Consider franchising or selling the business",
+          ],
+          timeline: "Ongoing",
+          budget: "$12000+",
+          successMetrics: "Multiple businesses, $100K+ monthly revenue, exit options"
+        },
       ],
     },
   },
@@ -891,24 +1353,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Social media marketing courses", "Platform certifications"],
       tools: ["Hootsuite", "Buffer", "Canva", "Google Analytics"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Learn social media platforms",
-        "Create portfolio content",
-        "Get first clients",
-        "Set up management tools",
+        {
+          title: "Service Setup & First Clients (Week 1-4)",
+          steps: [
+            "Define your social media service offerings",
+            "Create professional website and portfolio",
+            "Set up project management and social media tools",
+            "Reach out to 100+ local businesses",
+            "Offer free audits to get first 3-5 clients",
+          ],
+          timeline: "4 weeks",
+          budget: "$200-600",
+          successMetrics: "Website launched, 5+ clients, first social media campaigns"
+        },
+        {
+          title: "Service Delivery & Optimization (Week 5-12)",
+          steps: [
+            "Deliver exceptional results for first clients",
+            "Create case studies and before/after examples",
+            "Implement social media management systems",
+            "Build content calendars and posting schedules",
+            "Collect testimonials and ask for referrals",
+          ],
+          timeline: "8 weeks",
+          budget: "$400-1000",
+          successMetrics: "10+ completed campaigns, 4+ testimonials, first referrals"
+        },
       ],
       phase2: [
-        "Develop service packages",
-        "Build case studies",
-        "Scale client base",
-        "Optimize processes",
+        {
+          title: "Client Growth & Service Expansion (Month 3-6)",
+          steps: [
+            "Launch retainer packages for ongoing services",
+            "Add new services (paid ads, influencer marketing)",
+            "Implement client onboarding and management systems",
+            "Build email list of prospects and past clients",
+            "Create content marketing to attract new clients",
+          ],
+          timeline: "3-4 months",
+          budget: "$800-2000",
+          successMetrics: "20+ clients, 10+ retainer contracts, $8K+ monthly revenue"
+        },
+        {
+          title: "Team Building & Process Optimization (Month 4-8)",
+          steps: [
+            "Hire social media managers and content creators",
+            "Develop standardized service delivery processes",
+            "Create training programs for team members",
+            "Implement advanced analytics and reporting",
+            "Build strategic partnerships with complementary services",
+          ],
+          timeline: "4-5 months",
+          budget: "$2000-5000",
+          successMetrics: "Team of 5+ people, 30+ clients, $15K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Hire team members",
-        "Expand service offerings",
-        "Build agency brand",
-        "Target larger clients",
+        {
+          title: "Scale & Diversify (Month 8-12)",
+          steps: [
+            "Launch multiple service lines and specializations",
+            "Create online courses teaching social media",
+            "Develop proprietary tools and methodologies",
+            "Expand to enterprise-level clients",
+            "Build a network of partner agencies",
+          ],
+          timeline: "4-5 months",
+          budget: "$5000-15000",
+          successMetrics: "50+ clients, multiple service lines, $30K+ monthly revenue"
+        },
+        {
+          title: "Industry Leadership & Exit Strategy (Year 1+)",
+          steps: [
+            "Become recognized industry leader and speaker",
+            "Launch franchise opportunities or licensing",
+            "Acquire smaller agencies and integrate them",
+            "Develop proprietary social media software",
+            "Consider IPO or acquisition opportunities",
+          ],
+          timeline: "Ongoing",
+          budget: "$15000+",
+          successMetrics: "Industry recognition, $100K+ monthly revenue, exit options"
+        },
       ],
     },
   },
@@ -985,24 +1513,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["AI marketing courses", "Technical documentation"],
       tools: ["OpenAI API", "Marketing automation", "Analytics platforms"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Master key AI tools",
-        "Create AI-powered demos",
-        "Educate potential clients",
-        "Land first projects",
+        {
+          title: "Service Definition & Setup (Week 1-2)",
+          steps: [
+            "Define your AI marketing service offerings (ads, content, analytics)",
+            "Set up professional website and business infrastructure",
+            "Create service packages and pricing tiers",
+            "Set up project management and communication tools",
+            "Research target market and competition",
+          ],
+          timeline: "2 weeks",
+          budget: "$200-500",
+          successMetrics: "Website launched, service packages defined, first client inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 3-8)",
+          steps: [
+            "Reach out to 50+ potential clients daily",
+            "Offer discounted rates for first 3-5 clients",
+            "Implement AI tools for marketing automation",
+            "Deliver exceptional results and collect testimonials",
+            "Refine your service delivery process",
+          ],
+          timeline: "6 weeks",
+          budget: "$300-800",
+          successMetrics: "First 5 clients, 4.5+ star rating, 3+ testimonials"
+        },
       ],
       phase2: [
-        "Develop service frameworks",
-        "Build case studies",
-        "Scale AI implementations",
-        "Increase pricing",
+        {
+          title: "Client Base Building & Optimization (Month 2-4)",
+          steps: [
+            "Standardize service delivery processes",
+            "Implement AI-powered analytics and reporting",
+            "Create case studies showcasing client results",
+            "Build referral network with satisfied clients",
+            "Develop retainer packages for ongoing services",
+          ],
+          timeline: "2-3 months",
+          budget: "$500-1500",
+          successMetrics: "15+ clients, 5+ retainer contracts, $5K+ monthly revenue"
+        },
+        {
+          title: "Service Expansion & Team Building (Month 3-6)",
+          steps: [
+            "Add new AI marketing services based on client demand",
+            "Hire virtual assistants for routine tasks",
+            "Develop proprietary AI marketing methodologies",
+            "Create training programs for clients",
+            "Build strategic partnerships with AI tool providers",
+          ],
+          timeline: "3-4 months",
+          budget: "$1000-3000",
+          successMetrics: "25+ clients, team of 3+ people, $10K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Create proprietary AI solutions",
-        "Build specialized team",
-        "Target enterprise clients",
-        "Consider productization",
+        {
+          title: "Scale & Automate (Month 6-12)",
+          steps: [
+            "Develop proprietary AI marketing software",
+            "Create online courses teaching AI marketing",
+            "Launch a membership program for ongoing support",
+            "Hire full-time employees for core services",
+            "Implement advanced automation and AI systems",
+          ],
+          timeline: "6 months",
+          budget: "$3000-10000",
+          successMetrics: "50+ clients, proprietary software, $25K+ monthly revenue"
+        },
+        {
+          title: "Industry Leadership & Exit Strategy (Year 1+)",
+          steps: [
+            "Become recognized industry leader through speaking and media",
+            "Launch franchise or licensing opportunities",
+            "Acquire smaller agencies and integrate them",
+            "Develop enterprise-level AI marketing solutions",
+            "Consider IPO or acquisition opportunities",
+          ],
+          timeline: "Ongoing",
+          budget: "$10000+",
+          successMetrics: "Industry recognition, $100K+ monthly revenue, exit valuation"
+        },
       ],
     },
   },
@@ -1079,24 +1673,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Online courses", "Technical certifications"],
       tools: ["Adobe CC", "Figma", "VS Code", "Project management software"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Choose your specialization",
-        "Build portfolio projects",
-        "Set up business profiles",
-        "Get first clients",
+        {
+          title: "Service Definition & Setup (Week 1-2)",
+          steps: [
+            "Define your digital service offerings (web design, SEO, social media)",
+            "Create professional website and service packages",
+            "Set up project management and communication tools",
+            "Research target market and competition pricing",
+            "Create portfolio of past work or sample projects",
+          ],
+          timeline: "2 weeks",
+          budget: "$200-500",
+          successMetrics: "Website launched, service packages defined, first client inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 3-8)",
+          steps: [
+            "Reach out to 50+ potential clients daily",
+            "Offer discounted rates for first 3-5 clients",
+            "Deliver exceptional results and collect testimonials",
+            "Refine your service delivery process",
+            "Build relationships with industry professionals",
+          ],
+          timeline: "6 weeks",
+          budget: "$300-800",
+          successMetrics: "First 5 clients, 4.5+ star rating, 3+ testimonials"
+        },
       ],
       phase2: [
-        "Refine service offerings",
-        "Increase rates gradually",
-        "Build client testimonials",
-        "Expand skill set",
+        {
+          title: "Client Base Building & Optimization (Month 2-4)",
+          steps: [
+            "Standardize service delivery processes",
+            "Implement client management and billing systems",
+            "Create case studies showcasing results",
+            "Build referral network with satisfied clients",
+            "Develop retainer packages for ongoing services",
+          ],
+          timeline: "2-3 months",
+          budget: "$500-1500",
+          successMetrics: "15+ clients, 5+ retainer contracts, $8K+ monthly revenue"
+        },
+        {
+          title: "Service Expansion & Brand Building (Month 3-6)",
+          steps: [
+            "Add new digital services based on client demand",
+            "Develop your personal brand and authority",
+            "Create signature service frameworks",
+            "Build email list of prospects and clients",
+            "Start speaking at industry events",
+          ],
+          timeline: "3-4 months",
+          budget: "$800-2000",
+          successMetrics: "25+ clients, personal brand established, $12K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Develop premium services",
-        "Build agency team",
-        "Create passive income streams",
-        "Focus on high-value clients",
+        {
+          title: "Scale & Team Building (Month 6-12)",
+          steps: [
+            "Hire digital specialists and support staff",
+            "Develop proprietary service methodologies",
+            "Create online courses and training programs",
+            "Launch membership programs for ongoing support",
+            "Build strategic partnerships with complementary services",
+          ],
+          timeline: "6 months",
+          budget: "$2000-6000",
+          successMetrics: "Team of 5+ people, $20K+ monthly revenue, courses launched"
+        },
+        {
+          title: "Agency Launch & Industry Leadership (Year 1+)",
+          steps: [
+            "Launch your own digital agency",
+            "Hire full-time employees for core services",
+            "Develop enterprise-level client relationships",
+            "Create multiple service lines and revenue streams",
+            "Become recognized industry leader and speaker",
+          ],
+          timeline: "Ongoing",
+          budget: "$6000+",
+          successMetrics: "Agency with 15+ employees, $50K+ monthly revenue, industry recognition"
+        },
       ],
     },
   },
@@ -1276,24 +1936,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Copywriting courses", "Marketing psychology"],
       tools: ["Google Docs", "Grammarly", "CoSchedule Headline Analyzer"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Learn copywriting fundamentals",
-        "Create sample copy portfolio",
-        "Join freelance platforms",
-        "Get first clients",
+        {
+          title: "Portfolio Building & Setup (Week 1-3)",
+          steps: [
+            "Create professional website and portfolio",
+            "Write 10-15 sample pieces in different styles",
+            "Set up profiles on freelance platforms",
+            "Research target industries and clients",
+            "Set competitive initial rates",
+          ],
+          timeline: "3 weeks",
+          budget: "$100-300",
+          successMetrics: "Website launched, portfolio with 15+ samples, first client inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 4-8)",
+          steps: [
+            "Apply to 20+ relevant job postings daily",
+            "Accept 3-5 small projects to build portfolio",
+            "Deliver exceptional work and collect testimonials",
+            "Establish clear communication protocols",
+            "Create templates for common project types",
+          ],
+          timeline: "5 weeks",
+          budget: "$0-100",
+          successMetrics: "First 5 clients, 4.5+ star rating, 3+ testimonials"
+        },
       ],
       phase2: [
-        "Specialize in profitable niches",
-        "Track conversion results",
-        "Raise rates based on results",
-        "Build case studies",
+        {
+          title: "Client Growth & Rate Increases (Month 2-4)",
+          steps: [
+            "Gradually increase rates by 15-25% every 2 months",
+            "Focus on high-value clients and industries",
+            "Develop specialized copywriting services",
+            "Build long-term client relationships",
+            "Create case studies showcasing results",
+          ],
+          timeline: "2-3 months",
+          budget: "$200-500",
+          successMetrics: "15+ clients, 20% rate increase, $3K+ monthly income"
+        },
+        {
+          title: "Service Expansion & Brand (Month 3-6)",
+          steps: [
+            "Add new services (email sequences, landing pages)",
+            "Develop your personal brand and authority",
+            "Create signature copywriting frameworks",
+            "Build email list of prospects and clients",
+            "Start networking with marketing agencies",
+          ],
+          timeline: "3-4 months",
+          budget: "$300-800",
+          successMetrics: "25+ clients, personal brand established, $5K+ monthly income"
+        },
       ],
       phase3: [
-        "Develop premium packages",
-        "Build personal brand",
-        "Create copywriting courses",
-        "Consider agency model",
+        {
+          title: "Scale & Team Building (Month 6-12)",
+          steps: [
+            "Hire junior copywriters and editors",
+            "Create training programs for team members",
+            "Develop proprietary copywriting methodologies",
+            "Launch online courses teaching copywriting",
+            "Build strategic partnerships with agencies",
+          ],
+          timeline: "6 months",
+          budget: "$1000-3000",
+          successMetrics: "Team of 5+ people, $10K+ monthly income, courses launched"
+        },
+        {
+          title: "Agency Launch & Expansion (Year 1+)",
+          steps: [
+            "Launch your own copywriting agency",
+            "Hire full-time employees for core services",
+            "Develop enterprise-level client relationships",
+            "Create multiple service lines and revenue streams",
+            "Consider franchising or licensing opportunities",
+          ],
+          timeline: "Ongoing",
+          budget: "$3000+",
+          successMetrics: "Agency with 10+ employees, $25K+ monthly revenue, enterprise clients"
+        },
       ],
     },
   },
@@ -1845,24 +2571,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["SEO courses", "Content marketing guides"],
       tools: ["Yoast SEO", "Google Analytics", "Mailchimp"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Choose blog niche",
-        "Set up WordPress site",
-        "Create initial content",
-        "Learn basic SEO",
+        {
+          title: "Niche Selection & Setup (Week 1-2)",
+          steps: [
+            "Research profitable blog niches with low competition",
+            "Set up WordPress blog with professional theme",
+            "Create content calendar for first 30 posts",
+            "Set up SEO tools and analytics tracking",
+            "Research target keywords and topics",
+          ],
+          timeline: "2 weeks",
+          budget: "$100-300",
+          successMetrics: "Blog launched, content calendar ready, first post published"
+        },
+        {
+          title: "Content Creation & SEO (Week 3-12)",
+          steps: [
+            "Publish 3-5 high-quality posts weekly",
+            "Implement SEO optimization for each post",
+            "Build internal linking structure",
+            "Create lead magnets and opt-in forms",
+            "Start building email list",
+          ],
+          timeline: "10 weeks",
+          budget: "$200-500",
+          successMetrics: "30+ posts published, 100+ email subscribers, first organic traffic"
+        },
       ],
       phase2: [
-        "Build email list",
-        "Optimize for search engines",
-        "Network with other bloggers",
-        "Explore monetization",
+        {
+          title: "Monetization & Traffic Growth (Month 3-6)",
+          steps: [
+            "Apply for Google AdSense and affiliate programs",
+            "Create sponsored content opportunities",
+            "Implement email marketing campaigns",
+            "Focus on high-traffic keywords",
+            "Build backlinks through guest posting",
+          ],
+          timeline: "3-4 months",
+          budget: "$300-800",
+          successMetrics: "1000+ monthly visitors, first $100+ month, 5+ affiliate programs"
+        },
+        {
+          title: "Audience Building & Brand (Month 4-8)",
+          steps: [
+            "Expand to social media platforms",
+            "Create signature content series",
+            "Build relationships with other bloggers",
+            "Develop personal brand and authority",
+            "Launch podcast or YouTube channel",
+          ],
+          timeline: "4-5 months",
+          budget: "$500-1200",
+          successMetrics: "5000+ monthly visitors, personal brand established, $300+ monthly income"
+        },
       ],
       phase3: [
-        "Secure sponsored posts",
-        "Launch digital products",
-        "Build authority",
-        "Scale content production",
+        {
+          title: "Scale & Diversify (Month 8-12)",
+          steps: [
+            "Launch digital products (courses, e-books)",
+            "Create membership site for exclusive content",
+            "Hire writers and virtual assistants",
+            "Develop multiple revenue streams",
+            "Expand to new niches and topics",
+          ],
+          timeline: "4-5 months",
+          budget: "$1000-3000",
+          successMetrics: "$1K+ monthly income, 10K+ monthly visitors, multiple products"
+        },
+        {
+          title: "Business Expansion & Exit (Year 1+)",
+          steps: [
+            "Launch blog network or media company",
+            "Acquire other blogs and grow them",
+            "Create proprietary tools and software",
+            "Secure speaking and media opportunities",
+            "Consider selling blog or entire business",
+          ],
+          timeline: "Ongoing",
+          budget: "$3000+",
+          successMetrics: "$5K+ monthly income, blog network, exit options"
+        },
       ],
     },
   },
@@ -1939,24 +2731,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Industry certifications", "Consulting courses"],
       tools: ["Zoom", "Notion", "Stripe"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Identify your expertise",
-        "Create consulting packages",
-        "Build professional presence",
-        "Network with potential clients",
+        {
+          title: "Expertise Definition & Setup (Week 1-2)",
+          steps: [
+            "Define your consulting niche and target market",
+            "Create professional website and consulting packages",
+            "Set up business infrastructure and tools",
+            "Research competition and pricing in your niche",
+            "Create case studies from past experience",
+          ],
+          timeline: "2 weeks",
+          budget: "$200-500",
+          successMetrics: "Website launched, packages defined, first client inquiry"
+        },
+        {
+          title: "First Clients & Service Delivery (Week 3-8)",
+          steps: [
+            "Reach out to 50+ potential clients daily",
+            "Offer discounted rates for first 3-5 clients",
+            "Deliver exceptional results and collect testimonials",
+            "Refine your consulting methodology",
+            "Build relationships with industry professionals",
+          ],
+          timeline: "6 weeks",
+          budget: "$300-800",
+          successMetrics: "First 5 clients, 4.5+ star rating, 3+ testimonials"
+        },
       ],
       phase2: [
-        "Deliver first projects",
-        "Collect testimonials",
-        "Refine service offerings",
-        "Build referral network",
+        {
+          title: "Client Base Building & Optimization (Month 2-4)",
+          steps: [
+            "Standardize consulting processes and deliverables",
+            "Implement client management and billing systems",
+            "Create comprehensive case studies",
+            "Build referral network with satisfied clients",
+            "Develop retainer packages for ongoing services",
+          ],
+          timeline: "2-3 months",
+          budget: "$500-1500",
+          successMetrics: "15+ clients, 5+ retainer contracts, $8K+ monthly revenue"
+        },
+        {
+          title: "Service Expansion & Brand Building (Month 3-6)",
+          steps: [
+            "Add new consulting services based on client demand",
+            "Develop your personal brand and authority",
+            "Create signature consulting frameworks",
+            "Build email list of prospects and clients",
+            "Start speaking at industry events",
+          ],
+          timeline: "3-4 months",
+          budget: "$800-2000",
+          successMetrics: "25+ clients, personal brand established, $12K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Increase rates",
-        "Create scalable products",
-        "Build team",
-        "Focus on premium clients",
+        {
+          title: "Scale & Team Building (Month 6-12)",
+          steps: [
+            "Hire associate consultants and support staff",
+            "Develop proprietary consulting methodologies",
+            "Create online courses and training programs",
+            "Launch membership programs for ongoing support",
+            "Build strategic partnerships with complementary services",
+          ],
+          timeline: "6 months",
+          budget: "$2000-6000",
+          successMetrics: "Team of 5+ people, $20K+ monthly revenue, courses launched"
+        },
+        {
+          title: "Firm Launch & Industry Leadership (Year 1+)",
+          steps: [
+            "Launch your own consulting firm",
+            "Hire full-time employees for core services",
+            "Develop enterprise-level client relationships",
+            "Create multiple service lines and revenue streams",
+            "Become recognized industry leader and speaker",
+          ],
+          timeline: "Ongoing",
+          budget: "$6000+",
+          successMetrics: "Firm with 15+ employees, $50K+ monthly revenue, industry recognition"
+        },
       ],
     },
   },
@@ -2127,24 +2985,90 @@ export const businessPaths: BusinessPath[] = [
       learning: ["Course creation courses", "Video production tutorials"],
       tools: ["Camtasia", "Loom", "Canva"],
     },
-    actionPlan: {
+        actionPlan: {
       phase1: [
-        "Identify course topic",
-        "Research target audience",
-        "Create course outline",
-        "Set up course platform",
+        {
+          title: "Course Planning & Content Creation (Week 1-6)",
+          steps: [
+            "Research profitable course topics with high demand",
+            "Create detailed course outline and curriculum",
+            "Record 10-15 high-quality video lessons",
+            "Create supporting materials (workbooks, templates)",
+            "Set up course hosting platform (Teachable, Udemy)",
+          ],
+          timeline: "6 weeks",
+          budget: "$200-800",
+          successMetrics: "Course outline complete, 15+ lessons recorded, platform setup"
+        },
+        {
+          title: "Course Launch & Marketing (Week 7-12)",
+          steps: [
+            "Launch course with promotional pricing",
+            "Create sales page and marketing materials",
+            "Implement email marketing campaigns",
+            "Reach out to your existing audience and network",
+            "Collect first student feedback and testimonials",
+          ],
+          timeline: "6 weeks",
+          budget: "$300-1000",
+          successMetrics: "First 20+ students, course launched, initial feedback collected"
+        },
       ],
       phase2: [
-        "Record course content",
-        "Build email list",
-        "Create marketing materials",
-        "Launch beta version",
+        {
+          title: "Student Growth & Course Optimization (Month 3-6)",
+          steps: [
+            "Implement student feedback to improve course content",
+            "Create additional bonus materials and resources",
+            "Develop affiliate program for course promotion",
+            "Build email list of prospects and past students",
+            "Start creating content marketing to attract students",
+          ],
+          timeline: "3-4 months",
+          budget: "$500-1500",
+          successMetrics: "100+ students, affiliate program active, $3K+ monthly revenue"
+        },
+        {
+          title: "Course Expansion & Brand Building (Month 4-8)",
+          steps: [
+            "Create additional courses in related topics",
+            "Develop your personal brand as course creator",
+            "Launch membership site for ongoing student support",
+            "Create live workshops and group coaching",
+            "Build strategic partnerships with other creators",
+          ],
+          timeline: "4-5 months",
+          budget: "$1000-3000",
+          successMetrics: "3+ courses, membership site active, $8K+ monthly revenue"
+        },
       ],
       phase3: [
-        "Gather student feedback",
-        "Optimize course content",
-        "Scale marketing efforts",
-        "Create additional courses",
+        {
+          title: "Scale & Automate (Month 8-12)",
+          steps: [
+            "Develop automated marketing and sales funnels",
+            "Create online course creation business",
+            "Hire team members for content creation and support",
+            "Launch certification programs and advanced courses",
+            "Build a network of course creators and partners",
+          ],
+          timeline: "4-5 months",
+          budget: "$3000-8000",
+          successMetrics: "10+ courses, team of 5+ people, $20K+ monthly revenue"
+        },
+        {
+          title: "Education Empire & Industry Leadership (Year 1+)",
+          steps: [
+            "Launch your own online education platform",
+            "Create courses for other experts and creators",
+            "Develop proprietary course creation methodologies",
+            "Secure speaking engagements and media appearances",
+            "Consider selling courses or entire business",
+          ],
+          timeline: "Ongoing",
+          budget: "$8000+",
+          successMetrics: "Education platform, 50+ courses, $50K+ monthly revenue"
+        },
       ],
     },
   },

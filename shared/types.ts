@@ -98,9 +98,9 @@ export interface BusinessPath {
     tools: string[];
   };
   actionPlan: {
-    phase1: string[];
-    phase2: string[];
-    phase3: string[];
+    phase1: ImplementationPhase[];
+    phase2: ImplementationPhase[];
+    phase3: ImplementationPhase[];
   };
   aiAnalysis?: BusinessFitAnalysis;
   difficulty?: string;
@@ -109,6 +109,14 @@ export interface BusinessPath {
 export interface BusinessModel {
   // ... existing fields ...
   difficulty?: string;
+}
+
+export interface ImplementationPhase {
+  title: string;
+  steps: string[];
+  timeline: string;
+  budget: string;
+  successMetrics: string;
 }
 
 export interface BusinessFitAnalysis {
