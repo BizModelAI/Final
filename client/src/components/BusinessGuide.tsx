@@ -8,22 +8,13 @@ import {
   DollarSign,
   Users,
   TrendingUp,
-  Star,
-  Target,
   Brain,
-  Lightbulb,
-  Calendar,
   BarChart3,
-  Award,
-  Zap,
   BookOpen,
   Monitor,
-  MessageCircle,
   Shield,
   Briefcase,
-  Heart,
   AlertTriangle,
-  Play,
   Download,
   ExternalLink,
   ChevronDown,
@@ -36,7 +27,6 @@ import {
 import { QuizData, BusinessPath } from "../types";
 import { businessPaths } from "../data/businessPaths";
 import { businessModels } from "../data/businessModels";
-import { businessModelService } from "../utils/businessModelService";
 import { useBusinessModelScores } from "../contexts/BusinessModelScoresContext";
 import { usePaywall } from "../contexts/PaywallContext";
 import { useQuery } from "@tanstack/react-query";
@@ -74,6 +64,9 @@ const BusinessGuide: React.FC<BusinessGuideProps> = ({ quizData }) => {
   const [expandedSkills, setExpandedSkills] = useState<Set<string>>(new Set());
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
   const { hasCompletedQuiz, canAccessBusinessModel } = usePaywall();
+  
+  // Refs to store event listeners for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: EventListener }>>([]);
 
   // Fetch business resources using OpenAI
   const { data: businessResources, isLoading: resourcesLoading } = useQuery({
@@ -115,6 +108,7 @@ const BusinessGuide: React.FC<BusinessGuideProps> = ({ quizData }) => {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    eventListeners.current.push({ element: window, type: "scroll", handler: handleScroll });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
@@ -160,6 +154,17 @@ const BusinessGuide: React.FC<BusinessGuideProps> = ({ quizData }) => {
     }
   };
 
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+    };
+  }, []);
+
   // Update active section based on scroll position
   useEffect(() => {
     const handleScroll = () => {
@@ -176,6 +181,7 @@ const BusinessGuide: React.FC<BusinessGuideProps> = ({ quizData }) => {
     };
 
     window.addEventListener("scroll", handleScroll);
+    eventListeners.current.push({ element: window, type: "scroll", handler: handleScroll });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

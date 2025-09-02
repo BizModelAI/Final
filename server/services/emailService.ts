@@ -1,11 +1,13 @@
+import type { QuizData } from "../../shared/types";
 import { Resend } from "resend";
-import type { QuizData } from "../../shared/types.js";
-import { calculateAllBusinessModelMatches } from "../../shared/scoring.js";
-import {
-  calculatePersonalityScores,
-  getPersonalityDescription,
-} from "../../shared/personalityScoring.js";
-import ContentStorageService from "./contentStorageService.js";
+import { storage } from "../storage";
+import { PrismaClient } from '@prisma/client';
+import { centralizedScoringService } from "./centralizedScoringService";
+
+const prisma = new PrismaClient();
+import ContentStorageService from "./contentStorageService";
+import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils";
+import { generatePreviewEmailHTML, generatePaidEmailHTML } from "./newEmailTemplates";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -21,7 +23,6 @@ const getIncomeRangeLabel = (value: number): string => {
 };
 
 // Import centralized utility functions
-import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils.js";
 
 const getInvestmentRangeLabel = (value: number): string => {
   return getInvestmentRange(value);
@@ -179,7 +180,7 @@ export class EmailService {
 
   private async checkUnsubscribeStatus(email: string): Promise<boolean> {
     try {
-      const { storage } = await import("../storage.js");
+      const { storage } = await import("../storage");
       const user = await storage.getUserByEmail(email);
       return user?.isUnsubscribed || false;
     } catch (error) {
@@ -191,12 +192,7 @@ export class EmailService {
   async sendQuizResults(email: string, quizData: QuizData, quizAttemptId?: number): Promise<{ success: boolean; rateLimitInfo?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
     const subject = "Your BizModelAI Quiz Results";
     
-    // Calculate actual business model scores based on quiz data
-    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
-    
-    // Use your EXACT React-based email template with real business model scores
-    const { generateUnpaidEmailHtml } = await import("../utils/reactToHtml.js");
-    const html = generateUnpaidEmailHtml(quizData, email, scoredBusinessModels);
+    const html = await this.generateQuizResultsHTML(quizData, quizAttemptId);
 
     return await this.sendEmail({
       to: email,
@@ -220,12 +216,7 @@ export class EmailService {
   async sendFullReport(email: string, quizData: QuizData, quizAttemptId?: number): Promise<{ success: boolean; rateLimitInfo?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
     const subject = "Your Complete Business Report - BizModelAI";
     
-    // Calculate actual business model scores based on quiz data
-    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
-    
-    // Use your EXACT React-based paid user email template with real business model scores
-    const { generatePaidEmailHtml } = await import("../utils/reactToHtml.js");
-    const html = generatePaidEmailHtml(quizData, email, scoredBusinessModels);
+    const html = await this.generateFullReportHTML(quizData, quizAttemptId);
 
     return await this.sendEmail({
       to: email,
@@ -342,43 +333,9 @@ export class EmailService {
   }
 
   private async generateQuizResultsHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
-    try {
-      // Use the centralized email template system
-      const { generateUnpaidEmailHtml } = await import("../utils/reactToHtml.js");
-      const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
-      const html = generateUnpaidEmailHtml(quizData, "user@example.com", scoredBusinessModels);
-      
-      // Store business model scores if we have a quiz attempt ID
-      if (quizAttemptId) {
-        const contentStorage = ContentStorageService.getInstance();
-        
-        // Only store the scores - emails can be regenerated from this data
-        await contentStorage.storeBusinessModelScores(quizAttemptId, quizData);
-      }
-      
-      return html;
-    } catch (error) {
-      console.error("Error generating quiz results HTML:", error);
-      return this.generateFallbackHTML(quizData, "user@example.com", []);
-    }
+    return await generatePreviewEmailHTML(quizData, quizAttemptId);
   }
 
-  private generateFallbackHTML(quizData: QuizData, email: string, scoredBusinessModels: any[]): string {
-    // Simple fallback HTML if the main generation fails
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Your BizModelAI Results</title>
-        </head>
-        <body>
-          <h1>Your Quiz Results</h1>
-          <p>Thank you for completing the quiz!</p>
-          <p>We're processing your results and will send you a detailed analysis soon.</p>
-        </body>
-      </html>
-    `;
-  }
 
   private formatMotivation(motivation: string): string {
     const motivationMap: { [key: string]: string } = {
@@ -403,13 +360,24 @@ export class EmailService {
     return timelineMap[timeline] || timeline;
   }
 
-  private getTopBusinessModel(quizData: QuizData): {
+  private async getTopBusinessModel(quizData: QuizData, quizAttemptId?: number): Promise<{
     name: string;
     description: string;
     fitScore: number;
-  } {
-    // Use the same scoring algorithm as the frontend
-    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+  }> {
+    // Use stored scores from centralized service instead of recalculating
+    let scoredBusinessModels;
+    
+    if (quizAttemptId) {
+      // Try to get stored scores first
+      scoredBusinessModels = await centralizedScoringService.getStoredScores(quizAttemptId);
+    }
+    
+    // If no stored scores, calculate and store them
+    if (!scoredBusinessModels || scoredBusinessModels.length === 0) {
+      // This should rarely happen, but fallback to calculation if needed
+      scoredBusinessModels = await centralizedScoringService.calculateAndStoreScores(quizData, quizAttemptId || 0);
+    }
 
     // Get the top match (highest score)
     const topMatch = scoredBusinessModels[0];
@@ -461,7 +429,7 @@ export class EmailService {
     };
   }
 
-  private getPersonalizedPaths(quizData: QuizData): Array<{
+  private async getPersonalizedPaths(quizData: QuizData, quizAttemptId?: number): Promise<Array<{
     id: string;
     name: string;
     description: string;
@@ -470,9 +438,20 @@ export class EmailService {
     timeToProfit: string;
     startupCost: string;
     potentialIncome: string;
-  }> {
-    // Use the same scoring algorithm as the frontend
-    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
+  }>> {
+    // Use stored scores from centralized service instead of recalculating
+    let scoredBusinessModels;
+    
+    if (quizAttemptId) {
+      // Try to get stored scores first
+      scoredBusinessModels = await centralizedScoringService.getStoredScores(quizAttemptId);
+    }
+    
+    // If no stored scores, calculate and store them
+    if (!scoredBusinessModels || scoredBusinessModels.length === 0) {
+      // This should rarely happen, but fallback to calculation if needed
+      scoredBusinessModels = await centralizedScoringService.calculateAndStoreScores(quizData, quizAttemptId || 0);
+    }
 
     // Map business model data with details
     const businessModelData: {
@@ -696,7 +675,7 @@ export class EmailService {
     };
 
     // Map scored models to detailed business paths
-    return scoredBusinessModels.map((model) => {
+    return scoredBusinessModels.map((model: { name: string; score: number }) => {
       const modelData = businessModelData[model.name];
       return {
         id: modelData?.id || model.name.toLowerCase().replace(/\s+/g, "-"),
@@ -880,10 +859,7 @@ export class EmailService {
   }
 
   private async generateFullReportHTML(quizData: QuizData, quizAttemptId?: number): Promise<string> {
-    // Use the centralized email template system
-    const { generatePaidEmailHtml } = await import("../utils/reactToHtml.js");
-    const scoredBusinessModels = calculateAllBusinessModelMatches(quizData);
-    return generatePaidEmailHtml(quizData, "user@example.com", scoredBusinessModels);
+    return await generatePaidEmailHTML(quizData, quizAttemptId);
   }
 
   private generateContactFormNotificationHTML(formData: {

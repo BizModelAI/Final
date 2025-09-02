@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, CheckCircle, AlertTriangle } from "lucide-react";
@@ -11,6 +11,9 @@ const SaveResultsPayment: React.FC = () => {
   const { user } = useAuth();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [error, setError] = useState<string>("");
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   useEffect(() => {
     // Check if user has quiz data to save
@@ -78,9 +81,10 @@ const SaveResultsPayment: React.FC = () => {
           // Navigate to results page and force a reload to ensure latest quiz is displayed with full access
           navigate("/results");
           // Small delay to ensure navigation completes, then reload to show latest quiz with full access
-          setTimeout(() => {
+          const reloadTimeout = setTimeout(() => {
             window.location.reload();
           }, 100);
+          timeouts.current.add(reloadTimeout);
         } else {
           throw new Error("Failed to save quiz data");
         }
@@ -91,15 +95,27 @@ const SaveResultsPayment: React.FC = () => {
         localStorage.setItem("hasAnyPayment", "true");
         
         navigate("/results");
-        setTimeout(() => {
+        const reloadTimeout2 = setTimeout(() => {
           window.location.reload();
         }, 100);
+        timeouts.current.add(reloadTimeout2);
       }
     } catch (error) {
       console.error("Error saving quiz results:", error);
       setError("Failed to save quiz results. Please try again.");
     }
   };
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   const handleClose = () => {
     // User cancelled payment, go back to results preview

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { X, Mail, CheckCircle, Loader2, Clock } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, Mail, CheckCircle, Clock } from "lucide-react";
 import { QuizData } from "../types";
 import { useReportUnlock } from "../hooks/useReportUnlock";
 
@@ -27,6 +27,9 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
   const [rateLimitInfo, setRateLimitInfo] = useState<{ remainingTime: number; type: 'cooldown' | 'extended' } | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
   const { isUnlocked } = useReportUnlock(typeof quizAttemptId === 'number' && !isNaN(quizAttemptId) ? quizAttemptId : null);
+  
+  // Refs to store interval IDs for cleanup
+  const intervals = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Handle countdown timer for rate limits
   useEffect(() => {
@@ -41,8 +44,12 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
           return prev - 1;
         });
       }, 1000);
+      intervals.current.add(timer);
       
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+        intervals.current.delete(timer);
+      };
     }
   }, [rateLimitInfo, countdown]);
 
@@ -55,6 +62,17 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
       setCountdown(0);
     }
   }, [isOpen]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all intervals
+      intervals.current.forEach(intervalId => {
+        clearInterval(intervalId);
+      });
+      intervals.current.clear();
+    };
+  }, []);
 
   if (!isOpen) return null;
 

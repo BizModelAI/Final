@@ -7,7 +7,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
-import { Loader, CheckCircle, CreditCard, Lock } from "lucide-react";
+import { Loader, CheckCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_...");
@@ -292,17 +292,7 @@ const PayPalForm: React.FC<{
 
   const onApprove = async (data: any) => {
     try {
-      // NOTE: /api/capture-paypal-payment, /api/paypal-config are not implemented in the new backend.
-      // TODO: Implement these endpoints or update this logic if payment integration is required.
-      // Example (commented out):
-      /*
-      const response = await fetch('/api/capture-paypal-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(requestBody),
-      });
-      */
+      // Capture PayPal payment through our backend
       const response = await fetch("/api/capture-paypal-payment", {
         method: "POST",
         headers: {
@@ -438,18 +428,7 @@ const PaymentForm: React.FC<EnhancedPaymentFormProps> = ({
           }
         }
 
-        // NOTE: /api/create-report-unlock-payment, /api/capture-paypal-payment, /api/paypal-config are not implemented in the new backend.
-        // TODO: Implement these endpoints or update this logic if payment integration is required.
-        // All requests to protected endpoints should use credentials: 'include'.
-        // Example (commented out):
-        /*
-        const response = await fetch('/api/create-report-unlock-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(requestBody),
-        });
-        */
+        // Create payment through our backend
         const response = await fetch("/api/create-report-unlock-payment", {
           method: "POST",
           headers: {

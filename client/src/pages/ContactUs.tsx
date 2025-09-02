@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Send, CheckCircle, PlayCircle, ChevronDown } from "lucide-react";
@@ -15,11 +15,12 @@ const ContactUs: React.FC = () => {
   const [submitStatus, setSubmitStatus] = useState<
     "idle" | "success" | "error"
   >("idle");
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -44,7 +45,7 @@ const ContactUs: React.FC = () => {
       if (response.ok) {
         setSubmitStatus("success");
         // Reset form after success
-        setTimeout(() => {
+        const resetTimeout = setTimeout(() => {
           setFormData({
             name: "",
             email: "",
@@ -54,23 +55,37 @@ const ContactUs: React.FC = () => {
           });
           setSubmitStatus("idle");
         }, 5000);
+        timeouts.current.add(resetTimeout);
       } else {
         console.error("Contact form submission failed:", data.error);
         setSubmitStatus("error");
-        setTimeout(() => {
+        const errorTimeout = setTimeout(() => {
           setSubmitStatus("idle");
         }, 5000);
+        timeouts.current.add(errorTimeout);
       }
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      setSubmitStatus("error");
-      setTimeout(() => {
-        setSubmitStatus("idle");
-      }, 5000);
+              setSubmitStatus("error");
+        const catchErrorTimeout = setTimeout(() => {
+          setSubmitStatus("idle");
+        }, 5000);
+        timeouts.current.add(catchErrorTimeout);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">

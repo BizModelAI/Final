@@ -3,11 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Lock,
-  Star,
-  BarChart3,
-  Target,
-  Zap,
-  Brain,
   CheckCircle,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";

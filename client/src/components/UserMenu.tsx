@@ -11,31 +11,49 @@ const UserMenu: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout, isRealUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Refs to store event listeners for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: (event: Event) => void }>>([]);
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: Event) => {
+      const mouseEvent = event as MouseEvent;
+      if (menuRef.current && !menuRef.current.contains(mouseEvent.target as Node)) {
         setIsOpen(false);
         setSettingsOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    eventListeners.current.push({ element: document, type: "mousedown", handler: handleClickOutside });
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Close menu on escape key
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+    const handleEscape = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
+      if (keyboardEvent.key === "Escape") {
         setIsOpen(false);
         setShowLogoutConfirm(false);
       }
     };
 
     document.addEventListener("keydown", handleEscape);
+    eventListeners.current.push({ element: document, type: "keydown", handler: handleEscape });
     return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+    };
   }, []);
 
   const handleLogout = () => {

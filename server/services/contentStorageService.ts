@@ -1,5 +1,5 @@
-import { prisma } from '../db.js';
-import { calculateAllBusinessModelMatches } from '../../shared/scoring.js';
+import { prisma } from '../db';
+import { centralizedScoringService } from './centralizedScoringService';
 
 export interface BusinessModelScore {
   id: string;
@@ -40,25 +40,57 @@ export class ContentStorageService {
     quizData: any
   ): Promise<void> {
     try {
-      // Calculate business model scores
-      const businessModelScores = calculateAllBusinessModelMatches(quizData);
+      // Get business model scores from centralized service
+      const businessModelScores = await centralizedScoringService.getStoredScores(quizAttemptId);
       const topMatches = businessModelScores.slice(0, 3);
       const overallFitScore = topMatches[0]?.score || 0;
 
-      // Store in database
-      await prisma.businessModelScores.upsert({
-        where: { quizAttemptId },
+      // Store in AiContent table with content type 'business-model-scores'
+      await prisma.aiContent.upsert({
+        where: { 
+          quizAttemptId_contentType: {
+            quizAttemptId,
+            contentType: 'business-model-scores'
+          }
+        },
         update: {
-          scores: businessModelScores,
-          topMatches,
-          overallFitScore,
-          calculatedAt: new Date()
+          content: {
+            scores: businessModelScores.map(score => ({
+              id: score.id,
+              name: score.name,
+              score: score.score,
+              category: score.category
+            })),
+            topMatches: topMatches.map(score => ({
+              id: score.id,
+              name: score.name,
+              score: score.score,
+              category: score.category
+            })),
+            overallFitScore,
+            calculatedAt: new Date()
+          },
+          generatedAt: new Date()
         },
         create: {
           quizAttemptId,
-          scores: businessModelScores,
-          topMatches,
-          overallFitScore
+          contentType: 'business-model-scores',
+          content: {
+            scores: businessModelScores.map(score => ({
+              id: score.id,
+              name: score.name,
+              score: score.score,
+              category: score.category
+            })),
+            topMatches: topMatches.map(score => ({
+              id: score.id,
+              name: score.name,
+              score: score.score,
+              category: score.category
+            })),
+            overallFitScore,
+            calculatedAt: new Date()
+          }
         }
       });
 
@@ -74,10 +106,17 @@ export class ContentStorageService {
    */
   async getBusinessModelScores(quizAttemptId: number): Promise<BusinessModelScoresData | null> {
     try {
-      const scores = await prisma.businessModelScores.findUnique({
-        where: { quizAttemptId }
+      const scores = await prisma.aiContent.findFirst({
+        where: { 
+          quizAttemptId,
+          contentType: 'business-model-scores'
+        }
       });
-      return scores;
+      
+      if (scores && scores.content) {
+        return scores.content as unknown as BusinessModelScoresData;
+      }
+      return null;
     } catch (error) {
       console.error('❌ Failed to get business model scores:', error);
       return null;
@@ -89,8 +128,11 @@ export class ContentStorageService {
    */
   async hasBusinessModelScores(quizAttemptId: number): Promise<boolean> {
     try {
-      const scores = await prisma.businessModelScores.findUnique({
-        where: { quizAttemptId },
+      const scores = await prisma.aiContent.findFirst({
+        where: { 
+          quizAttemptId,
+          contentType: 'business-model-scores'
+        },
         select: { id: true }
       });
       return !!scores;
@@ -154,7 +196,9 @@ export class ContentStorageService {
   async getStorageStats(): Promise<any> {
     try {
       const totalAttempts = await prisma.quizAttempt.count();
-      const withScores = await prisma.businessModelScores.count();
+      const withScores = await prisma.aiContent.count({
+        where: { contentType: 'business-model-scores' }
+      });
       const guestAttempts = await prisma.quizAttempt.count({
         where: {
           userId: null,

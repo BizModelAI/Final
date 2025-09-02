@@ -3,7 +3,6 @@ import { QuizData } from "../types";
 import { businessModelService } from "../utils/businessModelService";
 import { businessPaths } from "../data/businessPaths";
 import { AICacheManager } from "../utils/aiCacheManager";
-import { renderMarkdownContent } from "../utils/markdownUtils";
 import {
   TrendingUp,
   Target,
@@ -20,7 +19,6 @@ import {
   Clock,
   DollarSign,
   Shield,
-  ExternalLink,
   User,
   BookOpen,
   Map,
@@ -608,7 +606,7 @@ export const PDFReportFull: React.FC<PDFReportFullProps> = ({
               {aiAnalysis?.fullAnalysis ? (
                 <div
                   dangerouslySetInnerHTML={{
-                    __html: aiAnalysis.fullAnalysis.replace(/\n/g, "<br>"),
+                    __html: aiAnalysis.fullAnalysis.replace(/\n/g, "<br>").replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, ''),
                   }}
                 />
               ) : (

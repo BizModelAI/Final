@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Mail, ArrowRight, CheckCircle, Clock, Star, User } from "lucide-react";
 import type { QuizData } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-import { Button } from "./ui/button";
 const uuidv4 = () => crypto.randomUUID();
 
 interface LoggedInCongratulationsProps {
@@ -82,6 +81,9 @@ const CongratulationsLoggedIn: React.FC<LoggedInCongratulationsProps> = ({
   const [emailSent, setEmailSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // --- Auto-save quizData and attemptId to localStorage on mount and every 10s ---
   useEffect(() => {
@@ -116,15 +118,27 @@ const CongratulationsLoggedIn: React.FC<LoggedInCongratulationsProps> = ({
     };
   }, [quizData, onStartAIGeneration]);
 
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
+
   const handleSendEmail = async () => {
     setIsSubmitting(true);
     try {
       await onSendEmailPreview();
       setEmailSent(true);
       // Auto-redirect after 1 second, just like guest congratulations
-      setTimeout(() => {
+      const redirectTimeout = setTimeout(() => {
         onStartAIGeneration();
       }, 1000);
+      timeouts.current.add(redirectTimeout);
     } finally {
       setIsSubmitting(false);
     }

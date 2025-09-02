@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from "express";
-import { Request, Response, NextFunction } from "express-serve-static-core";
+import type { Request, Response, NextFunction } from "express-serve-static-core";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./vite";
@@ -8,9 +8,20 @@ import { serveStatic } from "./vite";
 const app = express();
 const port = process.env.PORT || 9000;
 
-// CORS middleware
+// CORS middleware - updated for production
 app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'https://www.bizmodelai.com',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ].filter(Boolean);
+  
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -27,12 +38,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
 
 // Add middleware for parsing request bodies for all other routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Skip JSON/urlencoded parsing for Stripe webhook to preserve raw body
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.originalUrl === '/api/stripe/webhook') return next();
+  return express.json()(req, res, next);
+});
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.originalUrl === '/api/stripe/webhook') return next();
+  return express.urlencoded({ extended: true })(req, res, next);
+});
 
 // Session middleware configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || (() => {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('SESSION_SECRET environment variable is required in production');
+    }
+    return 'dev-secret-only';
+  })(),
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -44,11 +67,20 @@ app.use(session({
 }));
 
 (async () => {
-  await registerRoutes(app);
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
+  try {
+    await registerRoutes(app);
+    
+    if (process.env.NODE_ENV === "production") {
+      serveStatic(app);
+    }
+    
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${port}`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📊 Health check available at: http://localhost:${port}/api/health`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    process.exit(1);
   }
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
 })(); 

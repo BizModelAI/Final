@@ -3,6 +3,20 @@ import { useSearchParams } from "react-router-dom";
 import { PDFReportFull } from "../components/PDFReportFull";
 import { QuizData } from "../types";
 
+// Add atob to window object for base64 decoding
+declare global {
+  interface Window {
+    atob: (str: string) => string;
+  }
+}
+
+// Polyfill atob if not available
+if (typeof window !== 'undefined' && !window.atob) {
+  window.atob = function(str: string) {
+    return Buffer.from(str, 'base64').toString('binary');
+  };
+}
+
 export const PDFReportPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [reportData, setReportData] = useState<{

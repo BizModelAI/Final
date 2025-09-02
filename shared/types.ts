@@ -64,26 +64,7 @@ export interface QuizData {
   publicSpeakingComfort?: number;
   salesComfort?: number;
 
-  // New structure fields (for future compatibility) - with different names to avoid conflicts
-  sellOrExitBusiness?: string;
-  businessGrowthAmbition?: string;
-  hoursPerWeek?: string;
-  consistencyWithGoals?: number;
-  trialAndErrorComfort?: number;
-  competitiveness?: number;
-  consistentWorkspace?: string;
-  personalSupportSystem?: string;
-  internetAccessReliability?: number;
-  riskComfort?: number;
-  negativeFeedbackResponse?: number;
-  pathCreationPreference?: string;
-  faceAndVoiceOnlineComfort?: string;
-  clientCallComfort?: string;
-  physicalProductShipping?: string;
-  createEarnWorkConsistently?: string;
-  platformEcosystemInterest?: string;
-  hasAudience?: string;
-  promoteOthersProducts?: string;
+
   teachOrSolve?: string;
 }
 

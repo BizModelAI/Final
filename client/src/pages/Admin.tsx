@@ -12,7 +12,6 @@ import { Badge } from "../components/ui/badge";
 import {
   DollarSign,
   RefreshCw,
-  Eye,
   AlertCircle,
   CheckCircle,
   XCircle,

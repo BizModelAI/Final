@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,7 +8,6 @@ import {
   EyeOff,
   AlertCircle,
   X,
-  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -19,6 +18,9 @@ const Login: React.FC = () => {
   const [error, setError] = useState("");
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   const handleClose = () => {
     console.log("Close button clicked");
@@ -30,10 +32,22 @@ const Login: React.FC = () => {
     // Clear any existing quiz data and navigate to the quiz
     navigate("/quiz");
     // Scroll to top after navigation
-    setTimeout(() => {
+    const scrollTimeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
+    timeouts.current.add(scrollTimeout);
   };
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

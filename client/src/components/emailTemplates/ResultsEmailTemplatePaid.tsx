@@ -1,7 +1,7 @@
 import React from "react";
-import { businessPaths } from "../../../shared/businessPaths.js";
+import { businessPaths } from "../../../../shared/businessPaths";
 
-function getTopBusinessPaths(quizData) {
+function getTopBusinessPaths(quizData: any) {
     // Placeholder: return first 3 business paths
     return businessPaths.slice(0, 3);
 }
@@ -13,7 +13,7 @@ const socials = [
     { href: "https://www.pinterest.com/bizmodelai/", icon: "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/pinterest.svg", alt: "Pinterest" },
 ];
 
-function getPersonalizedSnapshot(quizData) {
+function getPersonalizedSnapshot(quizData: any) {
     if (!quizData) return [
         '• Prefer flexibility with structure',
         '• Thrive on independent projects',
@@ -74,7 +74,7 @@ function getPersonalizedSnapshot(quizData) {
     return lines.slice(0, 6);
 }
 
-const ResultsEmailTemplatePaid = ({ quizData, userEmail }) => {
+const ResultsEmailTemplatePaid = ({ quizData, userEmail }: { quizData: any; userEmail: any }) => {
     const topPaths = getTopBusinessPaths(quizData);
     const snapshotLines = getPersonalizedSnapshot(quizData);
     return (
@@ -89,7 +89,7 @@ const ResultsEmailTemplatePaid = ({ quizData, userEmail }) => {
                 <div style={{ padding: '40px 32px 32px 32px', background: '#fff', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
                     {/* Show all 3 business model cards */}
                     <div style={{ display: 'none', color: '#fff' }}>Your personalized business model results are ready! See your best fit, AI insights, and your full report.</div>
-                    {topPaths.map((path, idx) => {
+                    {topPaths.map((path: any, idx: number) => {
                         const emoji = path.emoji || '💡';
                         const fitScore = path.fitScore || 92;
                         const pros = path.pros ? path.pros.slice(0, 3) : [];
@@ -109,7 +109,7 @@ const ResultsEmailTemplatePaid = ({ quizData, userEmail }) => {
                                 <div style={{ marginBottom: 16 }}>
                                     <div style={{ fontWeight: 700, color: '#6366f1', fontSize: 16, marginBottom: 6 }}>Top Benefits</div>
                                     <ul style={{ color: '#334155', fontSize: 15, margin: 0, padding: '0 0 0 18px', lineHeight: 1.7, listStyle: 'disc' }}>
-                                        {pros.map((pro, i) => (
+                                                                                 {pros.map((pro: any, i: number) => (
                                             <li key={i} style={{ marginBottom: 6 }}>{pro}</li>
                                         ))}
                                     </ul>

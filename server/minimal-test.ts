@@ -6,7 +6,7 @@ app.use(express.json());
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-app.post('/test-email', async (req, res) => {
+app.post('/test-email', async (req: express.Request, res: express.Response) => {
   try {
     const { email } = req.body;
     
@@ -30,7 +30,7 @@ app.post('/test-email', async (req, res) => {
     });
 
     res.json({ success: true, message: 'Test email sent!', result });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending test email:', error);
     res.status(500).json({ error: 'Failed to send email', details: error.message });
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -690,6 +690,10 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
   const { toast } = useToast();
   const { clearScores } = useBusinessModelScores();
   const navigate = useNavigate();
+  
+  // Refs to store event listeners and timeouts for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: (event: Event) => void }>>([]);
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Everyone can take unlimited quizzes in the new pay-per-report system
 
@@ -712,7 +716,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
       localStorage.removeItem("quizData");
       localStorage.removeItem("hasCompletedQuiz");
       localStorage.removeItem("currentQuizAttemptId");
-      console.log("[DEBUG] Cleared currentQuizAttemptId on new quiz/retake");
+      // DEBUG: Removed for production Cleared currentQuizAttemptId on new quiz/retake");
       localStorage.removeItem("loadedReportData");
       localStorage.removeItem("quiz-completion-ai-insights");
       localStorage.removeItem("ai-generation-in-progress");
@@ -769,6 +773,23 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
     }
   }, [showExitModal]);
 
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+      
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
+
   // Get current round info
   const getCurrentRound = () => {
     return (
@@ -782,9 +803,10 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
 
   // Global keyboard event handler for escape key
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
+    const handleKeyDown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
+      if (keyboardEvent.key === "Escape") {
+        keyboardEvent.preventDefault();
 
         // If we're on the first round intro page, go directly home without exit modal
         if (showRoundIntro && currentRound === 1 && currentStep === 0) {
@@ -797,17 +819,19 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
     };
 
     document.addEventListener("keydown", handleKeyDown);
+    eventListeners.current.push({ element: document, type: "keydown", handler: handleKeyDown });
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showRoundIntro, currentRound, currentStep, onBack]);
 
   // Combined keyboard event handler for both round intro and quiz questions
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (showRoundIntro && event.key === "Enter") {
-        event.preventDefault();
+    const handleKeyDown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
+      if (showRoundIntro && keyboardEvent.key === "Enter") {
+        keyboardEvent.preventDefault();
         handleRoundContinue();
-      } else if (!showRoundIntro && event.key === "Enter") {
-        event.preventDefault();
+      } else if (!showRoundIntro && keyboardEvent.key === "Enter") {
+        keyboardEvent.preventDefault();
 
         // Check if user can proceed (has answered the question)
         const currentStepData = quizSteps[currentStep];
@@ -824,6 +848,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
     };
 
     document.addEventListener("keydown", handleKeyDown);
+    eventListeners.current.push({ element: document, type: "keydown", handler: handleKeyDown });
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showRoundIntro, formData, currentStep, isAnimating, isCompleting]);
 
@@ -848,17 +873,18 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
         setCurrentStep(nextStep);
         setIsAnimating(false);
       } else {
-        setTimeout(() => {
+        const nextStepTimeout = setTimeout(() => {
           setCurrentStep(nextStep);
           setIsAnimating(false);
         }, 300);
+        timeouts.current.add(nextStepTimeout);
       }
     } else {
       // Set completing state to show 100% progress bar
       setIsCompleting(true);
       
       // Wait 1 second with progress bar at 100%
-      setTimeout(async () => {
+      const completionTimeout = setTimeout(async () => {
         console.log("Quiz completed with data:", formData);
 
         // Generate a temporary quiz attempt ID if not present
@@ -885,6 +911,7 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
         setIsAnimating(false);
         setIsCompleting(false);
       }, 1000);
+      timeouts.current.add(completionTimeout);
     }
   };
 
@@ -909,10 +936,11 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
         setCurrentStep(prevStep);
         setIsAnimating(false);
       } else {
-        setTimeout(() => {
+        const prevStepTimeout = setTimeout(() => {
           setCurrentStep(prevStep);
           setIsAnimating(false);
         }, 300);
+        timeouts.current.add(prevStepTimeout);
       }
     } else {
       // If we're on the first question (step 0), go back to the round intro page

@@ -13,18 +13,13 @@ import {
   Brain,
   Star,
   MessageCircle,
-  BookOpen,
   Shield,
-  Package,
-  Monitor,
   Calendar,
-  Heart,
   ArrowRight,
-  BarChart3,
-  Compass
+  BarChart3
 } from 'lucide-react';
-import { QuizData, AIAnalysis, BusinessPath } from '../types';
-import { renderMarkdownContent } from '../utils/markdownUtils';
+import { QuizData, BusinessPath } from '../types';
+import { renderSafeMarkdownContent } from '../utils/safeMarkdownUtils';
 import { getSafeEmoji } from '../utils/contentUtils';
 
 interface BusinessReportContentProps {
@@ -76,12 +71,12 @@ const BusinessReportContent: React.FC<BusinessReportContentProps> = ({
           {content.map((item, index) => (
             <li key={index} className="flex items-start">
               <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-              <span className="leading-relaxed" dangerouslySetInnerHTML={renderMarkdownContent(item)} />
+              <span className="leading-relaxed" dangerouslySetInnerHTML={renderSafeMarkdownContent(item)} />
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-gray-700 leading-relaxed text-lg" dangerouslySetInnerHTML={renderMarkdownContent(content)} />
+        <p className="text-gray-700 leading-relaxed text-lg" dangerouslySetInnerHTML={renderSafeMarkdownContent(content)} />
       )}
     </motion.div>
   );
@@ -104,7 +99,7 @@ const BusinessReportContent: React.FC<BusinessReportContentProps> = ({
         {tasks.map((task, index) => (
           <li key={index} className="flex items-start">
             <ArrowRight className="h-4 w-4 text-blue-500 mr-3 flex-shrink-0 mt-1" />
-            <span className="leading-relaxed" dangerouslySetInnerHTML={renderMarkdownContent(task)} />
+                          <span className="leading-relaxed" dangerouslySetInnerHTML={renderSafeMarkdownContent(task)} />
           </li>
         ))}
       </ul>

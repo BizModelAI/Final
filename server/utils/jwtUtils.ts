@@ -1,6 +1,15 @@
 import jwt from 'jsonwebtoken';
+import type { Response } from 'express-serve-static-core';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme-in-prod';
+// Lazy validation - don't throw at module load
+const getJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+};
+
 const JWT_EXPIRES_IN = '7d';
 const COOKIE_NAME = 'auth_token';
 
@@ -11,6 +20,7 @@ export interface AuthPayload {
 }
 
 export function signToken(payload: AuthPayload): string {
+  const JWT_SECRET = getJwtSecret();
   return jwt.sign(payload, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
     algorithm: 'HS256',
@@ -19,17 +29,20 @@ export function signToken(payload: AuthPayload): string {
 
 export function verifyToken(token: string): AuthPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as AuthPayload;
+    const JWT_SECRET = getJwtSecret();
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded as AuthPayload;
   } catch (e) {
     return null;
   }
 }
 
-// Helper to set the cookie (for Vercel serverless, use Set-Cookie header)
-export function setAuthCookie(res: any, token: string) {
-  // For Vercel/Node: res.setHeader('Set-Cookie', ...)
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`); // 7d
-}
+// Helper to set the cookie (for traditional hosting, use Set-Cookie header)
+export const setCookie = (res: Response, name: string, value: string, options: any = {}) => {
+  // For traditional hosting: res.setHeader('Set-Cookie', ...)
+  const cookieValue = `${name}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`;
+  res.setHeader('Set-Cookie', cookieValue);
+};
 
 export function getTokenFromRequest(req: any): string | null {
   // Try cookie first

@@ -1,5 +1,5 @@
 import * as puppeteer from "puppeteer";
-import { QuizData } from "../../shared/types.js";
+import { QuizData } from "../../shared/types";
 import * as fs from "fs";
 
 export interface PDFGenerationOptions {
@@ -26,25 +26,20 @@ export class PDFService {
   async initializeBrowser(): Promise<void> {
     if (!this.browser) {
       try {
-        // Vercel-compatible configuration
-        this.browser = await puppeteer.launch({
-          headless: true,
+        // Render-compatible configuration for PDF generation
+        const puppeteerOptions = {
           args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-accelerated-2d-canvas",
-            "--no-first-run",
-            "--no-zygote",
-            "--single-process",
-            "--disable-gpu",
-            "--disable-background-timer-throttling",
-            "--disable-backgrounding-occluded-windows",
-            "--disable-renderer-backgrounding",
-            "--disable-features=TranslateUI",
-            "--disable-ipc-flooding-protection",
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
           ],
-        });
+          headless: true
+        };
+        this.browser = await puppeteer.launch(puppeteerOptions);
         console.log("Browser initialized successfully");
       } catch (error) {
         console.error("Failed to initialize browser:", error);

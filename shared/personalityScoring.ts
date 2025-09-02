@@ -32,6 +32,33 @@ interface RawScores {
   resilience: number;
 }
 
+// Type guard to check if a key is valid for RawScores
+function isValidRawScoreKey(key: string): key is keyof RawScores {
+  return key in {
+    socialComfort: true,
+    discipline: true,
+    riskTolerance: true,
+    techComfort: true,
+    structurePreference: true,
+    motivation: true,
+    feedbackResilience: true,
+    creativity: true,
+    confidence: true,
+    adaptability: true,
+    focusPreference: true,
+    resilience: true
+  };
+}
+
+// Helper function to safely add scores
+function addToRawScores(rawScores: RawScores, scores: Record<string, number>): void {
+  Object.entries(scores).forEach(([key, value]) => {
+    if (isValidRawScoreKey(key) && typeof value === 'number') {
+      rawScores[key] += value;
+    }
+  });
+}
+
 // Min/Max values for normalization (based on algorithm analysis)
 const MIN_MAX_SCORES = {
   socialComfort: { min: -15, max: 25 },
@@ -49,6 +76,11 @@ const MIN_MAX_SCORES = {
 };
 
 export function calculatePersonalityScores(data: QuizData): PersonalityScores {
+  // Validate required fields exist
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid quiz data provided');
+  }
+
   const rawScores: RawScores = {
     socialComfort: 0,
     discipline: 0,
@@ -72,9 +104,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'creativity-passion': { creativity: 4, motivation: 2, structurePreference: -1, confidence: 1, adaptability: 3, focusPreference: 1, resilience: 2 }
   };
   const motivationScore = motivationScores[data.mainMotivation as keyof typeof motivationScores] || {};
-  Object.entries(motivationScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, motivationScore);
 
   // Q2: First income timeline
   const timelineScores = {
@@ -84,9 +114,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no-rush': { motivation: 1, riskTolerance: -1, confidence: -1, discipline: 3, adaptability: 1, focusPreference: 1, resilience: 4 }
   };
   const timelineScore = timelineScores[data.firstIncomeTimeline as keyof typeof timelineScores] || {};
-  Object.entries(timelineScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, timelineScore);
 
   // Q3: Success income goal
   const incomeScores = {
@@ -99,9 +127,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
                      data.successIncomeGoal >= 5000 ? 5000 : 
                      data.successIncomeGoal >= 2000 ? 2000 : 500;
   const incomeScore = incomeScores[incomeLevel as keyof typeof incomeScores] || {};
-  Object.entries(incomeScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, incomeScore);
 
   // Q4: Upfront investment
   const investmentScores = {
@@ -114,21 +140,19 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
                          data.upfrontInvestment >= 1000 ? 1000 : 
                          data.upfrontInvestment >= 250 ? 250 : 0;
   const investmentScore = investmentScores[investmentLevel as keyof typeof investmentScores] || {};
-  Object.entries(investmentScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, investmentScore);
 
   // Q5: Passion identity alignment (1-5 scale)
-  const passionMultiplier = {
-    creativity: data.passionIdentityAlignment - 3,
-    motivation: Math.floor((data.passionIdentityAlignment - 3) * 1.5),
-    structurePreference: -(data.passionIdentityAlignment - 3),
-    adaptability: data.passionIdentityAlignment - 3,
-    focusPreference: data.passionIdentityAlignment - 3
-  };
-  Object.entries(passionMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.passionIdentityAlignment === 'number' && data.passionIdentityAlignment >= 1 && data.passionIdentityAlignment <= 5) {
+    const passionMultiplier = {
+      creativity: data.passionIdentityAlignment - 3,
+      motivation: Math.floor((data.passionIdentityAlignment - 3) * 1.5),
+      structurePreference: -(data.passionIdentityAlignment - 3),
+      adaptability: data.passionIdentityAlignment - 3,
+      focusPreference: data.passionIdentityAlignment - 3
+    };
+    addToRawScores(rawScores, passionMultiplier);
+  }
 
   // Q6: Business exit plan
   const exitScores = {
@@ -137,9 +161,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'not-sure': { motivation: 1, riskTolerance: 0, confidence: 0, structurePreference: 0 }
   };
   const exitScore = exitScores[data.businessExitPlan as keyof typeof exitScores] || {};
-  Object.entries(exitScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, exitScore);
 
   // Q7: Business growth size
   const growthScores = {
@@ -149,19 +171,17 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'widely-recognized': { confidence: 3, motivation: 4, riskTolerance: 3, discipline: 4, socialComfort: 2 }
   };
   const growthScore = growthScores[data.businessGrowthSize as keyof typeof growthScores] || {};
-  Object.entries(growthScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, growthScore);
 
   // Q8: Passive income importance (1-5 scale)
-  const passiveMultiplier = {
-    motivation: data.passiveIncomeImportance - 3,
-    discipline: Math.floor((data.passiveIncomeImportance - 3) * 1.5),
-    structurePreference: data.passiveIncomeImportance - 3
-  };
-  Object.entries(passiveMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.passiveIncomeImportance === 'number' && data.passiveIncomeImportance >= 1 && data.passiveIncomeImportance <= 5) {
+    const passiveMultiplier = {
+      motivation: data.passiveIncomeImportance - 3,
+      discipline: Math.floor((data.passiveIncomeImportance - 3) * 1.5),
+      structurePreference: data.passiveIncomeImportance - 3
+    };
+    addToRawScores(rawScores, passiveMultiplier);
+  }
 
   // Q9: Weekly time commitment
   const timeScores = {
@@ -174,37 +194,35 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
                    data.weeklyTimeCommitment >= 10 ? 25 : 
                    data.weeklyTimeCommitment >= 5 ? 10 : 5;
   const timeScore = timeScores[timeLevel as keyof typeof timeScores] || {};
-  Object.entries(timeScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, timeScore);
 
   // Q10: Long-term consistency (1-5 scale)
-  const consistencyMultiplier = {
-    discipline: (data.longTermConsistency - 3) * 2,
-    motivation: data.longTermConsistency - 3,
-    feedbackResilience: data.longTermConsistency - 3,
-    confidence: Math.floor((data.longTermConsistency - 3) * 1.5),
-    adaptability: data.longTermConsistency - 3,
-    focusPreference: data.longTermConsistency - 3,
-    resilience: data.longTermConsistency
-  };
-  Object.entries(consistencyMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.longTermConsistency === 'number' && data.longTermConsistency >= 1 && data.longTermConsistency <= 5) {
+    const consistencyMultiplier = {
+      discipline: (data.longTermConsistency - 3) * 2,
+      motivation: data.longTermConsistency - 3,
+      feedbackResilience: data.longTermConsistency - 3,
+      confidence: Math.floor((data.longTermConsistency - 3) * 1.5),
+      adaptability: data.longTermConsistency - 3,
+      focusPreference: data.longTermConsistency - 3,
+      resilience: data.longTermConsistency
+    };
+    addToRawScores(rawScores, consistencyMultiplier);
+  }
 
   // Q11: Trial and error comfort (1-5 scale)
-  const trialErrorMultiplier = {
-    riskTolerance: (data.trialErrorComfort - 3) * 2,
-    structurePreference: -(data.trialErrorComfort - 3) * 2,
-    creativity: data.trialErrorComfort - 3,
-    feedbackResilience: data.trialErrorComfort - 3,
-    adaptability: data.trialErrorComfort,
-    focusPreference: data.trialErrorComfort - 3,
-    resilience: (data.trialErrorComfort - 1) * 0.8
-  };
-  Object.entries(trialErrorMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.trialErrorComfort === 'number' && data.trialErrorComfort >= 1 && data.trialErrorComfort <= 5) {
+    const trialErrorMultiplier = {
+      riskTolerance: (data.trialErrorComfort - 3) * 2,
+      structurePreference: -(data.trialErrorComfort - 3) * 2,
+      creativity: data.trialErrorComfort - 3,
+      feedbackResilience: data.trialErrorComfort - 3,
+      adaptability: data.trialErrorComfort,
+      focusPreference: data.trialErrorComfort - 3,
+      resilience: (data.trialErrorComfort - 1) * 0.8
+    };
+    addToRawScores(rawScores, trialErrorMultiplier);
+  }
 
   // Q12: Learning preference
   const learningScores = {
@@ -214,34 +232,32 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'coaching': { creativity: 0, structurePreference: 1, riskTolerance: -1, socialComfort: 1 }
   };
   const learningScore = learningScores[data.learningPreference as keyof typeof learningScores] || {};
-  Object.entries(learningScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, learningScore);
 
   // Q13: Systems/routines enjoyment (1-5 scale)
-  const systemsMultiplier = {
-    discipline: (data.systemsRoutinesEnjoyment - 3) * 2,
-    structurePreference: (data.systemsRoutinesEnjoyment - 3) * 2,
-    creativity: -(data.systemsRoutinesEnjoyment - 3),
-    techComfort: data.systemsRoutinesEnjoyment - 3
-  };
-  Object.entries(systemsMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.systemsRoutinesEnjoyment === 'number' && data.systemsRoutinesEnjoyment >= 1 && data.systemsRoutinesEnjoyment <= 5) {
+    const systemsMultiplier = {
+      discipline: (data.systemsRoutinesEnjoyment - 3) * 2,
+      structurePreference: (data.systemsRoutinesEnjoyment - 3) * 2,
+      creativity: -(data.systemsRoutinesEnjoyment - 3),
+      techComfort: data.systemsRoutinesEnjoyment - 3
+    };
+    addToRawScores(rawScores, systemsMultiplier);
+  }
 
   // Q14: Discouragement resilience (1-5 scale)
-  const resilienceMultiplier = {
-    feedbackResilience: (data.discouragementResilience - 3) * 2,
-    motivation: data.discouragementResilience - 3,
-    confidence: data.discouragementResilience - 3,
-    discipline: Math.floor((data.discouragementResilience - 3) * 1.5),
-    adaptability: data.discouragementResilience - 3,
-    focusPreference: data.discouragementResilience - 3,
-    resilience: data.discouragementResilience
-  };
-  Object.entries(resilienceMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.discouragementResilience === 'number' && data.discouragementResilience >= 1 && data.discouragementResilience <= 5) {
+    const resilienceMultiplier = {
+      feedbackResilience: (data.discouragementResilience - 3) * 2,
+      motivation: data.discouragementResilience - 3,
+      confidence: data.discouragementResilience - 3,
+      discipline: Math.floor((data.discouragementResilience - 3) * 1.5),
+      adaptability: data.discouragementResilience - 3,
+      focusPreference: data.discouragementResilience - 3,
+      resilience: data.discouragementResilience
+    };
+    addToRawScores(rawScores, resilienceMultiplier);
+  }
 
   // Q15: Tool learning willingness
   const toolWillingnessScores = {
@@ -249,45 +265,43 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no': { techComfort: -3, structurePreference: -1, motivation: -1, confidence: -1 }
   };
   const toolScore = toolWillingnessScores[data.toolLearningWillingness as keyof typeof toolWillingnessScores] || {};
-  Object.entries(toolScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, toolScore);
 
   // Q16: Organization level (1-5 scale)
-  const organizationMultiplier = {
-    discipline: (data.organizationLevel - 3) * 2,
-    structurePreference: (data.organizationLevel - 3) * 2,
-    confidence: data.organizationLevel - 3,
-    techComfort: Math.floor((data.organizationLevel - 3) * 1.5)
-  };
-  Object.entries(organizationMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.organizationLevel === 'number' && data.organizationLevel >= 1 && data.organizationLevel <= 5) {
+    const organizationMultiplier = {
+      discipline: (data.organizationLevel - 3) * 2,
+      structurePreference: (data.organizationLevel - 3) * 2,
+      confidence: data.organizationLevel - 3,
+      techComfort: Math.floor((data.organizationLevel - 3) * 1.5)
+    };
+    addToRawScores(rawScores, organizationMultiplier);
+  }
 
   // Q17: Self-motivation level (1-5 scale)
-  const selfMotivationMultiplier = {
-    motivation: (data.selfMotivationLevel - 3) * 2,
-    discipline: (data.selfMotivationLevel - 3) * 2,
-    confidence: data.selfMotivationLevel - 3,
-    feedbackResilience: Math.floor((data.selfMotivationLevel - 3) * 1.5)
-  };
-  Object.entries(selfMotivationMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.selfMotivationLevel === 'number' && data.selfMotivationLevel >= 1 && data.selfMotivationLevel <= 5) {
+    const selfMotivationMultiplier = {
+      motivation: (data.selfMotivationLevel - 3) * 2,
+      discipline: (data.selfMotivationLevel - 3) * 2,
+      confidence: data.selfMotivationLevel - 3,
+      feedbackResilience: Math.floor((data.selfMotivationLevel - 3) * 1.5)
+    };
+    addToRawScores(rawScores, selfMotivationMultiplier);
+  }
 
   // Q18: Uncertainty handling (1-5 scale)
-  const uncertaintyMultiplier = {
-    riskTolerance: (data.uncertaintyHandling - 3) * 2,
-    structurePreference: -(data.uncertaintyHandling - 3) * 2,
-    confidence: data.uncertaintyHandling - 3,
-    creativity: Math.floor((data.uncertaintyHandling - 3) * 1.5),
-    adaptability: data.uncertaintyHandling,
-    focusPreference: data.uncertaintyHandling - 3,
-    resilience: (data.uncertaintyHandling - 1) * 0.7
-  };
-  Object.entries(uncertaintyMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.uncertaintyHandling === 'number' && data.uncertaintyHandling >= 1 && data.uncertaintyHandling <= 5) {
+    const uncertaintyMultiplier = {
+      riskTolerance: (data.uncertaintyHandling - 3) * 2,
+      structurePreference: -(data.uncertaintyHandling - 3) * 2,
+      confidence: data.uncertaintyHandling - 3,
+      creativity: Math.floor((data.uncertaintyHandling - 3) * 1.5),
+      adaptability: data.uncertaintyHandling,
+      focusPreference: data.uncertaintyHandling - 3,
+      resilience: (data.uncertaintyHandling - 1) * 0.7
+    };
+    addToRawScores(rawScores, uncertaintyMultiplier);
+  }
 
   // Q19: Repetitive tasks feeling
   const repetitiveScores = {
@@ -297,9 +311,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'enjoy': { discipline: 3, structurePreference: 2, creativity: -2, motivation: 2 }
   };
   const repetitiveScore = repetitiveScores[data.repetitiveTasksFeeling as keyof typeof repetitiveScores] || {};
-  Object.entries(repetitiveScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, repetitiveScore);
 
   // Q20: Work collaboration preference
   const collaborationScores = {
@@ -309,55 +321,53 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'both': { socialComfort: 1, structurePreference: 0, confidence: 1, creativity: 1 }
   };
   const collaborationScore = collaborationScores[data.workCollaborationPreference as keyof typeof collaborationScores] || {};
-  Object.entries(collaborationScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, collaborationScore);
 
   // Q21: Brand face comfort (1-5 scale)
-  const brandFaceMultiplier = {
-    socialComfort: (data.brandFaceComfort - 3) * 2,
-    confidence: (data.brandFaceComfort - 3) * 2,
-    motivation: Math.floor((data.brandFaceComfort - 3) * 1.5),
-    creativity: data.brandFaceComfort - 3
-  };
-  Object.entries(brandFaceMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.brandFaceComfort === 'number' && data.brandFaceComfort >= 1 && data.brandFaceComfort <= 5) {
+    const brandFaceMultiplier = {
+      socialComfort: (data.brandFaceComfort - 3) * 2,
+      confidence: (data.brandFaceComfort - 3) * 2,
+      motivation: Math.floor((data.brandFaceComfort - 3) * 1.5),
+      creativity: data.brandFaceComfort - 3
+    };
+    addToRawScores(rawScores, brandFaceMultiplier);
+  }
 
   // Q22: Competitiveness level (1-5 scale)
-  const competitivenessMultiplier = {
-    motivation: (data.competitivenessLevel - 3) * 2,
-    confidence: (data.competitivenessLevel - 3) * 2,
-    riskTolerance: data.competitivenessLevel - 3,
-    feedbackResilience: Math.floor((data.competitivenessLevel - 3) * 1.5)
-  };
-  Object.entries(competitivenessMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.competitivenessLevel === 'number' && data.competitivenessLevel >= 1 && data.competitivenessLevel <= 5) {
+    const competitivenessMultiplier = {
+      motivation: (data.competitivenessLevel - 3) * 2,
+      confidence: (data.competitivenessLevel - 3) * 2,
+      riskTolerance: data.competitivenessLevel - 3,
+      feedbackResilience: Math.floor((data.competitivenessLevel - 3) * 1.5)
+    };
+    addToRawScores(rawScores, competitivenessMultiplier);
+  }
 
   // Q23: Creative work enjoyment (1-5 scale)
-  const creativeWorkMultiplier = {
-    creativity: (data.creativeWorkEnjoyment - 3) * 2,
-    structurePreference: -(data.creativeWorkEnjoyment - 3),
-    motivation: data.creativeWorkEnjoyment - 3,
-    confidence: Math.floor((data.creativeWorkEnjoyment - 3) * 1.5),
-    adaptability: data.creativeWorkEnjoyment - 3,
-    focusPreference: data.creativeWorkEnjoyment === 5 ? 1 : data.creativeWorkEnjoyment === 4 ? 2 : data.creativeWorkEnjoyment === 3 ? 3 : data.creativeWorkEnjoyment === 2 ? 4 : 5
-  };
-  Object.entries(creativeWorkMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.creativeWorkEnjoyment === 'number' && data.creativeWorkEnjoyment >= 1 && data.creativeWorkEnjoyment <= 5) {
+    const creativeWorkMultiplier = {
+      creativity: (data.creativeWorkEnjoyment - 3) * 2,
+      structurePreference: -(data.creativeWorkEnjoyment - 3),
+      motivation: data.creativeWorkEnjoyment - 3,
+      confidence: Math.floor((data.creativeWorkEnjoyment - 3) * 1.5),
+      adaptability: data.creativeWorkEnjoyment - 3,
+      focusPreference: data.creativeWorkEnjoyment === 5 ? 1 : data.creativeWorkEnjoyment === 4 ? 2 : data.creativeWorkEnjoyment === 3 ? 3 : data.creativeWorkEnjoyment === 2 ? 4 : 5
+    };
+    addToRawScores(rawScores, creativeWorkMultiplier);
+  }
 
   // Q24: Direct communication enjoyment (1-5 scale)
-  const communicationMultiplier = {
-    socialComfort: (data.directCommunicationEnjoyment - 3) * 2,
-    confidence: (data.directCommunicationEnjoyment - 3) * 2,
-    feedbackResilience: data.directCommunicationEnjoyment - 3,
-    motivation: Math.floor((data.directCommunicationEnjoyment - 3) * 1.5)
-  };
-  Object.entries(communicationMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.directCommunicationEnjoyment === 'number' && data.directCommunicationEnjoyment >= 1 && data.directCommunicationEnjoyment <= 5) {
+    const communicationMultiplier = {
+      socialComfort: (data.directCommunicationEnjoyment - 3) * 2,
+      confidence: (data.directCommunicationEnjoyment - 3) * 2,
+      feedbackResilience: data.directCommunicationEnjoyment - 3,
+      motivation: Math.floor((data.directCommunicationEnjoyment - 3) * 1.5)
+    };
+    addToRawScores(rawScores, communicationMultiplier);
+  }
 
   // Q25: Work structure preference
   const workStructureScores = {
@@ -367,19 +377,17 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'total-freedom': { structurePreference: -3, discipline: -1, creativity: 2, riskTolerance: 2 }
   };
   const workStructureScore = workStructureScores[data.workStructurePreference as keyof typeof workStructureScores] || {};
-  Object.entries(workStructureScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, workStructureScore);
 
   // Q26: Tech skills rating (1-5 scale)
-  const techSkillsMultiplier = {
-    techComfort: (data.techSkillsRating - 3) * 3,
-    confidence: data.techSkillsRating - 3,
-    structurePreference: Math.floor((data.techSkillsRating - 3) * 0.5)
-  };
-  Object.entries(techSkillsMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.techSkillsRating === 'number' && data.techSkillsRating >= 1 && data.techSkillsRating <= 5) {
+    const techSkillsMultiplier = {
+      techComfort: (data.techSkillsRating - 3) * 3,
+      confidence: data.techSkillsRating - 3,
+      structurePreference: Math.floor((data.techSkillsRating - 3) * 0.5)
+    };
+    addToRawScores(rawScores, techSkillsMultiplier);
+  }
 
   // Q27: Workspace availability
   const workspaceScores = {
@@ -387,9 +395,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no': { discipline: -2, structurePreference: -2, confidence: -1, techComfort: -1 }
   };
   const workspaceScore = workspaceScores[data.workspaceAvailability as keyof typeof workspaceScores] || {};
-  Object.entries(workspaceScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, workspaceScore);
 
   // Q28: Support system strength
   const supportScores = {
@@ -399,20 +405,18 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'very-strong': { confidence: 2, feedbackResilience: 2, motivation: 2, socialComfort: 2 }
   };
   const supportScore = supportScores[data.supportSystemStrength as keyof typeof supportScores] || {};
-  Object.entries(supportScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, supportScore);
 
   // Q29: Internet/device reliability (1-5 scale)
-  const reliabilityMultiplier = {
-    techComfort: (data.internetDeviceReliability - 3) * 2,
-    structurePreference: data.internetDeviceReliability - 3,
-    confidence: Math.floor((data.internetDeviceReliability - 3) * 1.5),
-    discipline: data.internetDeviceReliability - 3
-  };
-  Object.entries(reliabilityMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.internetDeviceReliability === 'number' && data.internetDeviceReliability >= 1 && data.internetDeviceReliability <= 5) {
+    const reliabilityMultiplier = {
+      techComfort: (data.internetDeviceReliability - 3) * 2,
+      structurePreference: data.internetDeviceReliability - 3,
+      confidence: Math.floor((data.internetDeviceReliability - 3) * 1.5),
+      discipline: data.internetDeviceReliability - 3
+    };
+    addToRawScores(rawScores, reliabilityMultiplier);
+  }
 
   // Q30: Familiar tools
   const toolBonuses = {
@@ -422,12 +426,12 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'shopify-wix': { techComfort: 3, confidence: 1, adaptability: 1, focusPreference: 1 },
     'zoom-streamyard': { techComfort: 2, socialComfort: 1, adaptability: 1, focusPreference: 1 }
   };
-  data.familiarTools?.forEach(tool => {
-    const toolScore = toolBonuses[tool as keyof typeof toolBonuses] || {};
-    Object.entries(toolScore).forEach(([key, value]) => {
-      rawScores[key as keyof RawScores] += value;
+  if (Array.isArray(data.familiarTools)) {
+    data.familiarTools.forEach(tool => {
+      const toolScore = toolBonuses[tool as keyof typeof toolBonuses] || {};
+      addToRawScores(rawScores, toolScore);
     });
-  });
+  }
 
   // Q31: Decision making style
   const decisionScores = {
@@ -437,34 +441,32 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'talking-to-others': { riskTolerance: -1, structurePreference: 0, confidence: 0, socialComfort: 2 }
   };
   const decisionScore = decisionScores[data.decisionMakingStyle as keyof typeof decisionScores] || {};
-  Object.entries(decisionScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, decisionScore);
 
   // Q32: Risk comfort level (1-5 scale)
-  const riskComfortMultiplier = {
-    riskTolerance: (data.riskComfortLevel - 3) * 3,
-    confidence: (data.riskComfortLevel - 3) * 2,
-    motivation: data.riskComfortLevel - 3,
-    feedbackResilience: Math.floor((data.riskComfortLevel - 3) * 1.5)
-  };
-  Object.entries(riskComfortMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.riskComfortLevel === 'number' && data.riskComfortLevel >= 1 && data.riskComfortLevel <= 5) {
+    const riskComfortMultiplier = {
+      riskTolerance: (data.riskComfortLevel - 3) * 3,
+      confidence: (data.riskComfortLevel - 3) * 2,
+      motivation: data.riskComfortLevel - 3,
+      feedbackResilience: Math.floor((data.riskComfortLevel - 3) * 1.5)
+    };
+    addToRawScores(rawScores, riskComfortMultiplier);
+  }
 
   // Q33: Feedback rejection response (1-5 scale)
-  const feedbackResponseMultiplier = {
-    feedbackResilience: (data.feedbackRejectionResponse - 3) * 3,
-    confidence: (data.feedbackRejectionResponse - 3) * 2,
-    motivation: data.feedbackRejectionResponse - 3,
-    socialComfort: Math.floor((data.feedbackRejectionResponse - 3) * 1.5),
-    adaptability: data.feedbackRejectionResponse - 3,
-    focusPreference: data.feedbackRejectionResponse - 3,
-    resilience: data.feedbackRejectionResponse
-  };
-  Object.entries(feedbackResponseMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.feedbackRejectionResponse === 'number' && data.feedbackRejectionResponse >= 1 && data.feedbackRejectionResponse <= 5) {
+    const feedbackResponseMultiplier = {
+      feedbackResilience: (data.feedbackRejectionResponse - 3) * 3,
+      confidence: (data.feedbackRejectionResponse - 3) * 2,
+      motivation: data.feedbackRejectionResponse - 3,
+      socialComfort: Math.floor((data.feedbackRejectionResponse - 3) * 1.5),
+      adaptability: data.feedbackRejectionResponse - 3,
+      focusPreference: data.feedbackRejectionResponse - 3,
+      resilience: data.feedbackRejectionResponse
+    };
+    addToRawScores(rawScores, feedbackResponseMultiplier);
+  }
 
   // Q34: Path preference
   const pathScores = {
@@ -474,20 +476,18 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'build-something-new': { creativity: 3, riskTolerance: 3, structurePreference: -2, confidence: 2 }
   };
   const pathScore = pathScores[data.pathPreference as keyof typeof pathScores] || {};
-  Object.entries(pathScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, pathScore);
 
   // Q35: Control importance (1-5 scale)
-  const controlMultiplier = {
-    confidence: (data.controlImportance - 3) * 2,
-    structurePreference: data.controlImportance - 3,
-    riskTolerance: Math.floor((data.controlImportance - 3) * 1.5),
-    discipline: data.controlImportance - 3
-  };
-  Object.entries(controlMultiplier).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  if (typeof data.controlImportance === 'number' && data.controlImportance >= 1 && data.controlImportance <= 5) {
+    const controlMultiplier = {
+      confidence: (data.controlImportance - 3) * 2,
+      structurePreference: data.controlImportance - 3,
+      riskTolerance: Math.floor((data.controlImportance - 3) * 1.5),
+      discipline: data.controlImportance - 3
+    };
+    addToRawScores(rawScores, controlMultiplier);
+  }
 
   // Additional scoring for remaining questions...
   // Q36: Online presence comfort
@@ -496,9 +496,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no': { socialComfort: -2, confidence: -2, techComfort: -1, creativity: -1 }
   };
   const onlineScore = onlinePresenceScores[data.onlinePresenceComfort as keyof typeof onlinePresenceScores] || {};
-  Object.entries(onlineScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, onlineScore);
 
   // Q37: Client calls comfort
   const clientCallsScores = {
@@ -506,9 +504,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no': { socialComfort: -3, confidence: -2, feedbackResilience: -1 }
   };
   const clientCallsScore = clientCallsScores[data.clientCallsComfort as keyof typeof clientCallsScores] || {};
-  Object.entries(clientCallsScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, clientCallsScore);
 
   // Q38: Physical shipping openness
   const shippingScores = {
@@ -516,9 +512,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'no': { discipline: -1, structurePreference: -1, techComfort: 0 }
   };
   const shippingScore = shippingScores[data.physicalShippingOpenness as keyof typeof shippingScores] || {};
-  Object.entries(shippingScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, shippingScore);
 
   // Q39: Work style preference
   const workStyleScores = {
@@ -527,9 +521,7 @@ export function calculatePersonalityScores(data: QuizData): PersonalityScores {
     'mix-both': { creativity: 1, socialComfort: 1, discipline: 1, motivation: 1 }
   };
   const workStyleScore = workStyleScores[data.workStylePreference as keyof typeof workStyleScores] || {};
-  Object.entries(workStyleScore).forEach(([key, value]) => {
-    rawScores[key as keyof RawScores] += value;
-  });
+  addToRawScores(rawScores, workStyleScore);
 
   // Normalize scores to 1-5 scale
   const finalScores: PersonalityScores = {

@@ -1,20 +1,62 @@
+import { QuizData } from '../../shared/types';
+import { businessPaths } from '../../shared/businessPaths';
+import { centralizedScoringService } from './centralizedScoringService';
+
 // New email templates based on React components
 export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
-  const { businessPaths } = await import('../../shared/businessPaths.js');
   
-  // Use pre-calculated scores if provided, otherwise calculate them
+  // Use pre-calculated scores if provided, otherwise get from centralized service
   let calculatedMatches = preCalculatedScores;
-  if (!calculatedMatches) {
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
-    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+  if (!calculatedMatches || calculatedMatches.length === 0) {
+    if (quizAttemptId) {
+      try {
+        calculatedMatches = await centralizedScoringService.getStoredScores(quizAttemptId);
+        console.log(`Retrieved ${calculatedMatches.length} stored scores for attempt ${quizAttemptId}`);
+      } catch (error) {
+        console.log('Failed to get stored scores, falling back to calculation:', error);
+        // Fallback to calculation if needed
+        const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+        calculatedMatches = calculateAllBusinessModelMatches(quizData);
+        console.log(`Calculated ${calculatedMatches.length} scores as fallback`);
+      }
+    } else {
+      // Fallback to calculation if no attempt ID
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      calculatedMatches = calculateAllBusinessModelMatches(quizData);
+      console.log(`Calculated ${calculatedMatches.length} scores (no attempt ID)`);
+    }
   }
   
-  // Map the calculated scores to the business paths
-  const topPaths = businessPaths.slice(0, 3).map(path => {
-    const match = calculatedMatches.find(m => m.id === path.id);
+  // Ensure we have calculated matches - if still empty, calculate them
+  if (!calculatedMatches || calculatedMatches.length === 0) {
+    console.log('No calculated matches found, calculating scores as final fallback');
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+    console.log(`Final fallback calculated ${calculatedMatches.length} scores`);
+  }
+  
+  // Use the actual calculated scores to determine top 3 paths
+  const sortedMatches = calculatedMatches
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  console.log('Email template - Top 3 calculated matches:', sortedMatches.map(m => `${m.name} (${m.score}%)`));
+  console.log('Email template - Available business path IDs:', businessPaths.map(p => p.id));
+  
+  // Map the calculated scores to the business paths - NO FALLBACKS
+  const topPaths = sortedMatches.map(match => {
+    // Must find exact ID match - no fallbacks allowed
+    const path = businessPaths.find(p => p.id === match.id);
+    
+    if (!path) {
+      console.error(`CRITICAL ERROR: No business path found for ID: ${match.id} (${match.name})`);
+      console.error(`Available business path IDs:`, businessPaths.map(p => p.id));
+      throw new Error(`Business path mismatch: ${match.id} not found in business paths`);
+    }
+    
     return {
       ...path,
-      fitScore: match ? match.score : 85 // Fallback to 85% if no match found
+      fitScore: match.score
     };
   });
   
@@ -729,7 +771,7 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
                     <div style="margin-bottom: 16px;">
                       <div style="font-weight: 700; color: #6366f1; font-size: 16px; margin-bottom: 6px;">Top Benefits</div>
                       <ul style="color: #334155; font-size: 15px; margin: 0; padding: 0 0 0 18px; line-height: 1.7; list-style: disc;">
-                        ${pros.map(pro => `<li style="margin-bottom: 6px;">${pro}</li>`).join('')}
+                        ${pros.map((pro: string) => `<li style="margin-bottom: 6px;">${pro}</li>`).join('')}
                       </ul>
                     </div>
                     <p style="color: #18181b; font-size: 16px; margin-bottom: 24px; line-height: 1.7;">${description}</p>
@@ -825,23 +867,189 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
 }
 
 export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
-  const { businessPaths } = await import('../../shared/businessPaths.js');
+  const { businessPaths } = await import('../../shared/businessPaths');
   
-  // Use pre-calculated scores if provided, otherwise calculate them
+  // Use pre-calculated scores if provided, otherwise get from centralized service
   let calculatedMatches = preCalculatedScores;
-  if (!calculatedMatches) {
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
-    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+  if (!calculatedMatches || calculatedMatches.length === 0) {
+    if (quizAttemptId) {
+      try {
+        calculatedMatches = await centralizedScoringService.getStoredScores(quizAttemptId);
+        console.log(`Retrieved ${calculatedMatches.length} stored scores for attempt ${quizAttemptId}`);
+      } catch (error) {
+        console.log('Failed to get stored scores, falling back to calculation:', error);
+        // Fallback to calculation if needed
+        const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+        calculatedMatches = calculateAllBusinessModelMatches(quizData);
+        console.log(`Calculated ${calculatedMatches.length} scores as fallback`);
+      }
+    } else {
+      // Fallback to calculation if no attempt ID
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      calculatedMatches = calculateAllBusinessModelMatches(quizData);
+      console.log(`Calculated ${calculatedMatches.length} scores (no attempt ID)`);
+    }
   }
   
-  // Map the calculated scores to the business paths
-  const topPaths = businessPaths.slice(0, 3).map(path => {
-    const match = calculatedMatches.find(m => m.id === path.id);
+  // Ensure we have calculated matches - if still empty, calculate them
+  if (!calculatedMatches || calculatedMatches.length === 0) {
+    console.log('No calculated matches found, calculating scores as final fallback');
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+    console.log(`Final fallback calculated ${calculatedMatches.length} scores`);
+  }
+  
+  // Use the actual calculated scores to determine top 3 paths
+  const sortedMatches = calculatedMatches
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+  
+  console.log('Email template - Top 3 calculated matches:', sortedMatches.map(m => `${m.name} (${m.score}%)`));
+  console.log('Email template - Available business path IDs:', businessPaths.map(p => p.id));
+  
+  // Map the calculated scores to the business paths - NO FALLBACKS
+  const topPaths = sortedMatches.map(match => {
+    // Must find exact ID match - no fallbacks allowed
+    const path = businessPaths.find(p => p.id === match.id);
+    
+    if (!path) {
+      console.error(`CRITICAL ERROR: No business path found for ID: ${match.id} (${match.name})`);
+      console.error(`Available business path IDs:`, businessPaths.map(p => p.id));
+      throw new Error(`Business path mismatch: ${match.id} not found in business paths`);
+    }
+    
     return {
       ...path,
-      fitScore: match ? match.score : 85 // Fallback to 85% if no match found
+      fitScore: match.score
     };
   });
+  
+  // Generate business model-specific benefits based on user's quiz data
+  function generateBusinessModelBenefits(path: any, quizData: any): string[] {
+    if (!quizData || !path) return [];
+    
+    const benefits = [];
+    
+    // Content Creation / UGC specific benefits
+    if (path.id === 'content-creation') {
+      if (quizData.creativeWorkEnjoyment >= 4) {
+        benefits.push('Your natural creativity makes content creation feel effortless and enjoyable');
+      }
+      if (quizData.techSkillsRating >= 4) {
+        benefits.push('Strong tech skills give you an edge in content creation tools and platforms');
+      }
+      if (quizData.selfMotivationLevel >= 4) {
+        benefits.push('High self-motivation keeps you consistent with content creation schedules');
+      }
+      if (quizData.workCollaborationPreference === 'mostly-solo') {
+        benefits.push('Independent work style aligns perfectly with content creation workflows');
+      }
+      if (quizData.riskComfortLevel >= 4) {
+        benefits.push('Risk tolerance helps you experiment with new content formats and trends');
+      }
+      if (quizData.weeklyTimeCommitment >= 17) {
+        benefits.push('Your time availability allows for consistent content production and growth');
+      }
+    }
+    
+    // Freelancing specific benefits
+    else if (path.id === 'freelancing') {
+      if (quizData.workCollaborationPreference === 'mostly-solo') {
+        benefits.push('Independent work preference makes freelancing a natural fit for you');
+      }
+      if (quizData.selfMotivationLevel >= 4) {
+        benefits.push('Strong self-motivation drives consistent client acquisition and project delivery');
+      }
+      if (quizData.techSkillsRating >= 4) {
+        benefits.push('Tech skills enable efficient remote work and client communication');
+      }
+      if (quizData.workStructurePreference === 'some-structure') {
+        benefits.push('Flexible structure preference allows you to adapt to different client needs');
+      }
+      if (quizData.riskComfortLevel >= 3) {
+        benefits.push('Risk tolerance helps you navigate the ups and downs of freelancing');
+      }
+      if (quizData.weeklyTimeCommitment >= 17) {
+        benefits.push('Your time availability supports building a sustainable freelance business');
+      }
+    }
+    
+    // Affiliate Marketing specific benefits
+    else if (path.id === 'affiliate-marketing') {
+      if (quizData.techSkillsRating >= 4) {
+        benefits.push('Strong tech skills help you build and optimize affiliate websites');
+      }
+      if (quizData.selfMotivationLevel >= 4) {
+        benefits.push('Self-motivation drives consistent content creation and promotion');
+      }
+      if (quizData.workCollaborationPreference === 'mostly-solo') {
+        benefits.push('Independent work style fits affiliate marketing\'s solo nature');
+      }
+      if (quizData.riskComfortLevel >= 3) {
+        benefits.push('Risk tolerance helps you test different affiliate strategies');
+      }
+      if (quizData.weeklyTimeCommitment >= 17) {
+        benefits.push('Your time availability supports building multiple income streams');
+      }
+      if (quizData.learningPreference === 'hands-on') {
+        benefits.push('Hands-on learning style accelerates affiliate marketing skill development');
+      }
+    }
+    
+    // Online Coaching specific benefits
+    else if (path.id === 'online-coaching') {
+      if (quizData.workCollaborationPreference === 'team' || quizData.workCollaborationPreference === 'solo-flexible') {
+        benefits.push('Your collaboration style makes one-on-one coaching relationships natural');
+      }
+      if (quizData.selfMotivationLevel >= 4) {
+        benefits.push('High self-motivation inspires and motivates your coaching clients');
+      }
+      if (quizData.techSkillsRating >= 3) {
+        benefits.push('Tech comfort enables smooth online coaching sessions and tools');
+      }
+      if (quizData.workStructurePreference === 'some-structure') {
+        benefits.push('Flexible structure helps you adapt coaching to different client needs');
+      }
+      if (quizData.riskComfortLevel >= 3) {
+        benefits.push('Risk tolerance helps you build confidence in your coaching business');
+      }
+      if (quizData.weeklyTimeCommitment >= 17) {
+        benefits.push('Your time availability supports building a sustainable coaching practice');
+      }
+    }
+    
+    // Generic benefits for any business model
+    if (benefits.length === 0) {
+      if (quizData.selfMotivationLevel >= 3) {
+        benefits.push('Strong self-motivation drives business success');
+      }
+      if (quizData.techSkillsRating >= 3) {
+        benefits.push('Tech skills enable efficient business operations');
+      }
+      if (quizData.riskComfortLevel >= 3) {
+        benefits.push('Risk tolerance helps you navigate business challenges');
+      }
+      if (quizData.weeklyTimeCommitment >= 15) {
+        benefits.push('Your time availability supports business growth');
+      }
+    }
+    
+    // Ensure we always have at least 3 benefits
+    if (benefits.length < 3) {
+      const fallbackBenefits = [
+        'Your unique combination of skills and preferences creates a strong foundation for success',
+        'This business model aligns well with your current situation and goals',
+        'Your entrepreneurial mindset positions you well for this opportunity'
+      ];
+      
+      // Add fallback benefits to reach 3 total
+      for (let i = benefits.length; i < 3; i++) {
+        benefits.push(fallbackBenefits[i - benefits.length]);
+      }
+    }
+    
+    return benefits;
+  }
   
   function getPersonalizedSnapshot(quizData: any): string[] {
     // Same logic as above
@@ -980,7 +1188,7 @@ export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: numbe
                     <div style="margin-bottom: 16px;">
                       <div style="font-weight: 700; color: #6366f1; font-size: 16px; margin-bottom: 6px;">Top Benefits</div>
                       <ul style="color: #334155; font-size: 15px; margin: 0; padding: 0 0 0 18px; line-height: 1.7; list-style: disc;">
-                        ${pros.map(pro => `<li style="margin-bottom: 6px;">${pro}</li>`).join('')}
+                        ${pros.map((pro: string) => `<li style="margin-bottom: 6px;">${pro}</li>`).join('')}
                       </ul>
                     </div>
                     <p style="color: #18181b; font-size: 16px; margin-bottom: 24px; line-height: 1.7;">${description}</p>

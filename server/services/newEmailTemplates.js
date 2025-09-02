@@ -1,8 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-// Removed require statement - using ES modules now
-
-function generatePreviewEmailHTML(quizData, quizAttemptId) {
+// ES module - using export/import syntax
+export function generatePreviewEmailHTML(quizData, quizAttemptId) {
   try {
     // For now, return a simple HTML template until we get the React templates working
     return `

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, DollarSign, TrendingUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useEmojiSafeguard } from "../hooks/useEmojiSafeguard";
 
 interface ResponsiveBusinessCardProps {

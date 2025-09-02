@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import UserMenu from "./UserMenu";
@@ -10,6 +10,9 @@ function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  
+  // Refs to store event listeners for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: EventListener }>>([]);
 
   const navItems = [
     { path: "/", label: "Home" },
@@ -34,10 +37,22 @@ function Header() {
 
     // Add scroll event listener
     window.addEventListener("scroll", handleScroll, { passive: true });
+    eventListeners.current.push({ element: window, type: "scroll", handler: handleScroll });
 
     // Cleanup
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+    };
+  }, []);
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);

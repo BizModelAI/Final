@@ -46,6 +46,82 @@ class Storage {
     return await this.prisma.quizAttempt.create({ data });
   }
 
+  // Centralized quiz attempt creation with report access initialization
+  async createQuizAttemptWithAccess(data: {
+    userId?: number;
+    sessionId?: string;
+    quizData: any;
+    isPaid?: boolean;
+  }) {
+    const { userId, sessionId, quizData, isPaid = false } = data;
+    
+    // Use a transaction to ensure both quiz attempt and report access are created atomically
+    return await this.prisma.$transaction(async (tx) => {
+      // Create the quiz attempt
+      const attempt = await tx.quizAttempt.create({
+        data: {
+          userId,
+          sessionId,
+          quizData,
+          isPaid,
+          completedAt: new Date(),
+        },
+      });
+
+      // Initialize report access within the same transaction
+      const reportTypes = [
+        'results-preview',    // Free - basic results
+        'full-report',        // Paid - detailed analysis
+        'pdf-download',       // Paid - downloadable PDF
+        'income-projections'  // Paid - financial forecasts
+      ];
+
+      for (const reportType of reportTypes) {
+        const isUnlocked = reportType === 'results-preview' || isPaid;
+        const unlockedBy = reportType === 'results-preview' ? 'free' : (isPaid ? 'paid' : 'locked');
+        
+        await tx.reportAccess.create({
+          data: {
+            quizAttemptId: attempt.id,
+            reportType,
+            isUnlocked,
+            unlockedBy,
+            unlockedAt: isUnlocked ? new Date() : null,
+            expiresAt: null
+          }
+        });
+      }
+
+      // Calculate and store business model scores within the same transaction
+      try {
+        const { calculateAllBusinessModelMatches } = await import('../shared/scoring');
+        const calculatedScores = calculateAllBusinessModelMatches(quizData);
+        
+        // Store scores in database
+        const scoresToStore = calculatedScores.map(score => ({
+          quizAttemptId: attempt.id,
+          businessModelId: score.id,
+          businessModelName: score.name,
+          score: score.score,
+          category: score.category,
+          fitScore: score.score // For backward compatibility
+        }));
+
+        await tx.businessModelScores.createMany({
+          data: scoresToStore
+        });
+
+        console.log(`Business model scores calculated and stored for quiz attempt ${attempt.id}`);
+      } catch (error) {
+        console.error(`Error calculating business model scores for quiz attempt ${attempt.id}:`, error);
+        // Don't fail the transaction if scoring fails - the quiz attempt is still valid
+      }
+
+      console.log(`Quiz attempt ${attempt.id} created with report access and scoring initialized (transaction)`);
+      return attempt;
+    });
+  }
+
   async getQuizAttemptsCount(userId: number) {
     return await this.prisma.quizAttempt.count({ where: { userId } });
   }
@@ -181,7 +257,7 @@ class Storage {
           password: data.password || '',
           isTemporary: true,
           sessionId,
-          tempQuizData: data.quizData || null,
+          // quizData is stored in QuizAttempt, not in User
           expiresAt: data.expiresAt || null,
           firstName: data.firstName || null,
           lastName: data.lastName || null,
@@ -217,7 +293,7 @@ class Storage {
   async convertTemporaryUserToPaid(sessionId: string) {
     return await this.prisma.user.updateMany({
       where: { sessionId, isTemporary: true },
-      data: { isPaid: true, isTemporary: false, sessionId: undefined, tempQuizData: undefined, expiresAt: undefined, updatedAt: new Date() },
+      data: { isPaid: true, isTemporary: false, sessionId: undefined, expiresAt: undefined, updatedAt: new Date() },
     });
   }
 

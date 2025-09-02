@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Star,
   Clock,
   DollarSign,
@@ -17,196 +16,19 @@ import {
   BookOpen,
   Lightbulb,
   ArrowRight,
-  X,
   Brain,
   Sparkles,
-  Calendar,
   CheckCircle,
-  AlertTriangle,
-  Rocket,
   FileText,
-  CreditCard,
-  Eye,
-  EyeOff,
   Download,
   Mail,
-  Share2,
-  ArrowUpRight,
-  MapPin,
-  Globe,
-  Building2,
-  Briefcase,
-  Palette,
-  PenTool,
-  Camera,
-  Mic,
-  Monitor,
-  Smartphone,
-  ShoppingCart,
-  Headphones,
-  Coffee,
-  Heart,
-  Crown,
-  Gift,
-  Compass,
-  Flag,
-  Home,
-  Car,
-  Plane,
-  Ship,
-  Train,
-  Bus,
-  Bicycle,
-  Motorcycle,
-  Truck,
-  Van,
-  Helicopter,
-  Subway,
-  Tram,
-  Ferry,
-  CableCar,
-  Gondola,
-  Funicular,
-  Chairlift,
-  SkiLift,
-  Escalator,
-  Elevator,
-  Stairs,
-  Ramp,
-  Bridge,
-  Tunnel,
-  Road,
-  Path,
-  Trail,
-  Highway,
-  Street,
-  Avenue,
-  Boulevard,
-  Lane,
-  Drive,
-  Way,
-  Place,
-  Court,
-  Circle,
-  Square,
-  Plaza,
-  Park,
-  Garden,
-  Forest,
-  Mountain,
-  Beach,
-  Lake,
-  River,
-  Ocean,
-  Desert,
-  Island,
-  Valley,
-  Canyon,
-  Cave,
-  Waterfall,
-  Volcano,
-  Glacier,
-  Snow,
-  Rain,
-  Sun,
-  Cloud,
-  Wind,
-  Storm,
-  Lightning,
-  Thunder,
-  Rainbow,
-  Fog,
-  Mist,
-  Hail,
-  Sleet,
-  Frost,
-  Ice,
-  Steam,
-  Smoke,
-  Fire,
-  Ash,
-  Dust,
-  Sand,
-  Rock,
-  Stone,
-  Crystal,
-  Gem,
-  Diamond,
-  Gold,
-  Silver,
-  Bronze,
-  Copper,
-  Iron,
-  Steel,
-  Aluminum,
-  Titanium,
-  Platinum,
-  Palladium,
-  Rhodium,
-  Iridium,
-  Osmium,
-  Ruthenium,
-  Rhenium,
-  Tungsten,
-  Molybdenum,
-  Niobium,
-  Tantalum,
-  Vanadium,
-  Chromium,
-  Manganese,
-  Cobalt,
-  Nickel,
-  Zinc,
-  Cadmium,
-  Mercury,
-  Lead,
-  Tin,
-  Antimony,
-  Bismuth,
-  Polonium,
-  Astatine,
-  Radon,
-  Francium,
-  Radium,
-  Actinium,
-  Thorium,
-  Protactinium,
-  Uranium,
-  Neptunium,
-  Plutonium,
-  Americium,
-  Curium,
-  Berkelium,
-  Californium,
-  Einsteinium,
-  Fermium,
-  Mendelevium,
-  Nobelium,
-  Lawrencium,
-  Rutherfordium,
-  Dubnium,
-  Seaborgium,
-  Bohrium,
-  Hassium,
-  Meitnerium,
-  Darmstadtium,
-  Roentgenium,
-  Copernicium,
-  Nihonium,
-  Flerovium,
-  Moscovium,
-  Livermorium,
-  Tennessine,
-  Oganesson
+  Share2
 } from "lucide-react";
 import confetti from "canvas-confetti";
-import { QuizData, BusinessPath, AIAnalysis } from "../types";
-import {
-  generateAIPersonalizedPaths,
-} from "../utils/quizLogic";
-import { businessModelService } from '../utils/businessModelService';
+import { QuizData, BusinessPath } from "../types";
+
+
 import { AIService } from "../utils/aiService";
-import { aiCacheManager } from "../utils/aiCacheManager";
 import FullReport from "./FullReport";
 
 
@@ -215,15 +37,14 @@ import { PaywallModal, LockedCardOverlay } from "./PaywallModals";
 import { PaymentAccountModal } from "./PaymentAccountModal";
 import { usePaywall } from "../contexts/PaywallContext";
 import { useAuth } from "../contexts/AuthContext";
-import { renderMarkdownContent } from "../utils/markdownUtils";
-import { ReportUnlockPaywall } from "./ReportUnlockPaywall";
+import { renderSafeMarkdownContent } from "../utils/safeMarkdownUtils";
 import { useReportUnlock } from "../hooks/useReportUnlock";
 import EmailResultsModal from "./EmailResultsModal";
 import { reportViewManager } from "../utils/reportViewManager";
 import { businessPaths } from "../../../shared/businessPaths";
 import { getSafeEmoji } from '../utils/contentUtils';
 import { useBusinessModelScores } from "../contexts/BusinessModelScoresContext";
-import { API_ROUTES, apiPost } from '../utils/apiClient';
+import { API_ROUTES } from '../utils/apiClient';
 import { useAIInsights } from '../contexts/AIInsightsContext';
 import { useEmojiSafeguard } from "../hooks/useEmojiSafeguard";
 import '../styles/BusinessCard.css';
@@ -432,6 +253,9 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
   const { aiInsights, setAIInsights } = useAIInsights();
   const analysisData = aiInsights?.analysis;
   const insightsData = aiInsights?.insights;
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
   const shouldShowFallback = !analysisData && !!insightsData;
 
   // Debug logging
@@ -444,6 +268,17 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     hasInsights: !!insightsData,
     localStorageData: localStorage.getItem('quiz-completion-ai-insights')
   });
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   // Fallback: Check if AI insights exist in localStorage but not in context
   useEffect(() => {
@@ -521,7 +356,8 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
           };
 
           // Small delay to ensure page is mounted
-          setTimeout(triggerConfetti, 500);
+              const confettiTimeout = setTimeout(triggerConfetti, 500);
+    timeouts.current.add(confettiTimeout);
 
           // Mark confetti as shown for this user
           localStorage.setItem(confettiKey, "true");
@@ -643,9 +479,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
           console.log("Handling pending full report request");
           setPendingFullReportRequest(false);
           // Use setTimeout to ensure state updates are processed
-          setTimeout(() => {
+          const fullReportTimeout = setTimeout(() => {
             handleViewFullReport(uniquePaths[0]);
           }, 100);
+          timeouts.current.add(fullReportTimeout);
         }
       } catch (error) {
         console.error("Error during Results initialization:", error);
@@ -658,13 +495,17 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
       console.log("Results initialization timeout - forcing completion");
       setIsInitializing(false);
     }, 30000); // 30 second timeout
+    timeouts.current.add(timeoutId);
 
     // Use quizDataState if loaded from deep link, otherwise use prop
     const dataToUse = quizDataState || quizData;
     if (!dataToUse) return;
     initializeResults();
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      timeouts.current.delete(timeoutId);
+    };
   }, [quizData, quizDataState, setHasCompletedQuiz, businessModelScores, calculateAndStoreScores, quizAttemptId, userEmail]);
 
   // --- Robust fallback for missing data ---
@@ -685,10 +526,11 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
       console.log("Handling pending full report request from useEffect");
       setPendingFullReportRequest(false);
       // Use setTimeout to ensure state updates are processed
-      setTimeout(() => {
+      const viewReportTimeout = setTimeout(() => {
         console.log("Calling handleViewFullReport with path:", personalizedPaths[0]);
         handleViewFullReport(personalizedPaths[0]);
       }, 100);
+      timeouts.current.add(viewReportTimeout);
     }
   }, [pendingFullReportRequest, personalizedPaths, isInitializing]);
 
@@ -766,10 +608,11 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
       );
 
       // Use setTimeout to ensure state updates are processed
-      setTimeout(() => {
+      const pathTimeout = setTimeout(() => {
         console.log("Calling handleViewFullReport with converted path:", uniquePaths[0]);
         handleViewFullReport(uniquePaths[0]);
       }, 100);
+      timeouts.current.add(pathTimeout);
     }
   }, [pendingFullReportRequest, businessModelScores, isInitializing]);
 
@@ -923,9 +766,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
       setShowFullReport(true);
       // Scroll to top of page immediately and then again after DOM update
       window.scrollTo({ top: 0, behavior: "instant" });
-      setTimeout(() => {
+      const scrollTimeout = setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }, 50);
+      timeouts.current.add(scrollTimeout);
     }
   };
 
@@ -934,9 +778,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     if (hasUnlockedAnalysis) {
       navigate(`/business-model/${path.id}`);
       // Scroll to top immediately after navigation
-      setTimeout(() => {
+      const learnMoreTimeout = setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
       }, 0);
+      timeouts.current.add(learnMoreTimeout);
     } else {
       // Otherwise, show the paywall modal
       setSelectedPath(path);
@@ -950,9 +795,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     if (hasUnlockedAnalysis) {
       navigate(`/guide/${path.id}`);
       // Scroll to top immediately after navigation
-      setTimeout(() => {
+      const startBusinessTimeout = setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
       }, 0);
+      timeouts.current.add(startBusinessTimeout);
     } else {
       // Otherwise, show the paywall modal
       setSelectedPath(path);
@@ -1028,7 +874,8 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     if (selectedPath) {
       const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: "instant" });
-        setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 100);
+        const scrollToTopTimeout = setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 100);
+        timeouts.current.add(scrollToTopTimeout);
       };
 
       if (paywallType === "full-report") {
@@ -1068,7 +915,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     setIsProcessingPayment(true);
 
     // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => {
+      const paymentTimeout = setTimeout(resolve, 2000);
+      timeouts.current.add(paymentTimeout);
+    });
 
     setHasUnlockedAnalysis(true);
     // Set flag to indicate any payment has been made
@@ -1081,9 +931,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     if (paywallType === "business-model" && selectedPath) {
       navigate(`/guide/${selectedPath!.id}`);
       // Scroll to top after navigation
-      setTimeout(() => {
+      const navigationTimeout = setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "instant" });
       }, 0);
+      timeouts.current.add(navigationTimeout);
     }
 
     // In a real implementation, this would:
@@ -1412,7 +1263,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                                       <CheckCircle className="h-4 w-4 text-green-300 mr-2 mt-0.5 flex-shrink-0" />
                                       <span
                                         className="text-sm"
-                                        dangerouslySetInnerHTML={renderMarkdownContent(
+                                        dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                           insight,
                                         )}
                                       />
@@ -1437,7 +1288,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                                       <Star className="h-4 w-4 text-yellow-300 mr-2 mt-0.5 flex-shrink-0" />
                                       <span
                                         className="text-sm"
-                                        dangerouslySetInnerHTML={renderMarkdownContent(
+                                        dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                           predictor,
                                         )}
                                       />
@@ -1780,7 +1631,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                               <CheckCircle className="h-4 w-4 text-green-300 mr-2 mt-0.5 flex-shrink-0" />
                               <span
                                 className="text-sm"
-                                dangerouslySetInnerHTML={renderMarkdownContent(
+                                dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                   insight,
                                 )}
                               />
@@ -1805,7 +1656,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                               <Star className="h-4 w-4 text-yellow-300 mr-2 mt-0.5 flex-shrink-0" />
                               <span
                                 className="text-sm"
-                                dangerouslySetInnerHTML={renderMarkdownContent(
+                                dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                   predictor,
                                 )}
                               />
@@ -2679,9 +2530,10 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
                   onClick={() => {
                     navigate("/dashboard");
                     // Scroll to top after navigation
-                    setTimeout(() => {
+                    const dashboardTimeout = setTimeout(() => {
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }, 100);
+                    timeouts.current.add(dashboardTimeout);
                   }}
                   className="bg-gradient-to-r from-green-400 to-emerald-500 text-gray-900 px-6 md:px-8 lg:px-12 py-3 md:py-4 lg:py-5 rounded-full text-base md:text-lg lg:text-xl font-bold hover:from-green-300 hover:to-emerald-400 transition-all duration-300 transform hover:scale-105 shadow-2xl"
                   whileHover={{ scale: 1.05 }}

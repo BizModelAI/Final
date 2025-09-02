@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
   ArrowLeft,
@@ -7,19 +7,15 @@ import {
   TrendingUp,
   Target,
   Brain,
-  Award,
   Users,
   CheckCircle,
   AlertTriangle,
   Star,
   Zap,
-  Calendar,
   BarChart3,
-  Lightbulb,
   Clock,
   DollarSign,
   Shield,
-  ExternalLink,
   ChevronDown,
 } from "lucide-react";
 import { QuizData, BusinessPath } from "../types";
@@ -34,7 +30,7 @@ import {
   calculatePersonalityScores,
   getPersonalityDescription,
 } from "../../../shared/personalityScoring";
-import { renderMarkdownContent } from "../utils/markdownUtils";
+import { renderSafeMarkdownContent } from "../utils/safeMarkdownUtils";
 import { reportViewManager } from "../utils/reportViewManager";
 import { getSafeEmoji } from '../utils/contentUtils';
 import { businessPaths } from '../data/businessPaths'; // or the correct path if needed
@@ -280,6 +276,9 @@ const FullReport: React.FC<FullReportProps> = ({
     getBottomMatches,
   } = useBusinessModelScores();
   
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
+  
   // Get AI insights from Results page
   const { aiInsights: resultsPageInsights } = useAIInsights();
 
@@ -431,402 +430,415 @@ const FullReport: React.FC<FullReportProps> = ({
         });
 
         // Second burst for more effect
-        setTimeout(() => {
+        const secondBurstTimeout = setTimeout(() => {
           confetti({
             particleCount: 50,
             spread: 50,
             origin: { y: 0.3 },
           });
         }, 250);
+        timeouts.current.add(secondBurstTimeout);
       };
 
       // Trigger confetti after a short delay
-      setTimeout(triggerConfetti, 500);
+      const confettiTimeout = setTimeout(triggerConfetti, 500);
+      timeouts.current.add(confettiTimeout);
 
       // Mark confetti as shown for this session
       sessionStorage.setItem(sessionKey, "true");
     }
+  }, [quizData, userEmail]);
 
-    // Generate all 6 characteristics with OpenAI
-    const generateAllCharacteristics = async () => {
-      try {
-        const aiService = AIService.getInstance();
-        const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
-        const result = await aiService.generateAllCharacteristics(quizData, quizAttemptId);
-        setAllCharacteristics(result.characteristics);
-      } catch (error) {
-        console.error("Error generating all characteristics:", error);
-        // Fallback characteristics based on quiz data
-        const fallbackCharacteristics = [
-          quizData.selfMotivationLevel >= 4
-            ? "Highly self-motivated"
-            : "Moderately self-motivated",
-          quizData.riskComfortLevel >= 4
-            ? "High risk tolerance"
-            : "Moderate risk tolerance",
-          quizData.techSkillsRating >= 4
-            ? "Strong tech skills"
-            : "Adequate tech skills",
-          quizData.directCommunicationEnjoyment >= 4
-            ? "Excellent communicator"
-            : "Good communicator",
-          quizData.organizationLevel >= 4
-            ? "Highly organized planner"
-            : "Flexible approach to planning",
-          quizData.creativeWorkEnjoyment >= 4
-            ? "Creative problem solver"
-            : "Analytical approach to challenges",
-        ];
-
-        setAllCharacteristics(fallbackCharacteristics);
-      }
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
     };
+  }, []);
 
-    // Generate AI insights function
-    const generateInsights = async (paths: BusinessPath[]) => {
-      try {
-        const aiService = AIService.getInstance();
-        
-        // Get bottom 3 paths for the API call
-        const bottomThree = getBottomMatches(3);
-        const bottomPaths = bottomThree.map(match => ({
-          id: match.id,
-          name: match.name,
-          fitScore: match.score,
-          description: `${match.name} with ${match.score}% compatibility`,
-          detailedDescription: `This business model scored ${match.score}% based on your quiz responses`,
-          difficulty: match.score >= 75 ? "Easy" : match.score >= 50 ? "Medium" : "Hard",
-          timeToProfit: match.score >= 80 ? "1-3 months" : match.score >= 60 ? "3-6 months" : "6+ months",
-          startupCost: match.score >= 70 ? "$0-500" : match.score >= 50 ? "$500-2000" : "$2000+",
-          potentialIncome: match.score >= 80 ? "$3K-10K+/month" : match.score >= 60 ? "$1K-5K/month" : "$500-2K/month",
-          pros: [`${match.score}% compatibility match`],
-          cons: match.score < 70 ? ["Lower compatibility score", "May require skill development"] : ["Minor adjustments needed"],
-          tools: ["Standard business tools"],
-          skills: ["Basic business skills"],
-          icon: "",
-          emoji: "�",
-          marketSize: "Large",
-          averageIncome: { beginner: "$1K-3K", intermediate: "$3K-8K", advanced: "$8K-20K+" },
-          userStruggles: ["Getting started"],
-          solutions: ["Step-by-step guidance"],
-          bestFitPersonality: ["Motivated"],
-          resources: { platforms: ["LinkedIn"], learning: ["Online courses"], tools: ["CRM"] },
-          actionPlan: { phase1: ["Setup"], phase2: ["Launch"], phase3: ["Scale"] }
-        }));
+  // Generate all 6 characteristics with OpenAI
+  const generateAllCharacteristics = async () => {
+    try {
+      const aiService = AIService.getInstance();
+      const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
+      const result = await aiService.generateAllCharacteristics(quizData, quizAttemptId);
+      setAllCharacteristics(result.characteristics);
+    } catch (error) {
+      console.error("Error generating all characteristics:", error);
+      // Fallback characteristics based on quiz data
+      const fallbackCharacteristics = [
+        quizData.selfMotivationLevel >= 4
+          ? "Highly self-motivated"
+          : "Moderately self-motivated",
+        quizData.riskComfortLevel >= 4
+          ? "High risk tolerance"
+          : "Moderate risk tolerance",
+        quizData.techSkillsRating >= 4
+          ? "Strong tech skills"
+          : "Adequate tech skills",
+        quizData.directCommunicationEnjoyment >= 4
+          ? "Excellent communicator"
+          : "Good communicator",
+        quizData.organizationLevel >= 4
+          ? "Highly organized planner"
+          : "Flexible approach to planning",
+        quizData.creativeWorkEnjoyment >= 4
+          ? "Creative problem solver"
+          : "Analytical approach to challenges",
+      ];
 
-        // Get quizAttemptId from props, context, or localStorage
-        const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
+      setAllCharacteristics(fallbackCharacteristics);
+    }
+  };
 
-        const insights = await aiService.generatePersonalizedInsights(
-          quizData,
-          paths.slice(0, 3),
-          bottomPaths,
-          quizAttemptId,
-        );
-        
+  // Generate AI insights function
+  const generateInsights = async (paths: BusinessPath[]) => {
+    try {
+      const aiService = AIService.getInstance();
+      
+      // Get bottom 3 paths for the API call
+      const bottomThree = getBottomMatches(3);
+      const bottomPaths = bottomThree.map(match => ({
+        id: match.id,
+        name: match.name,
+        fitScore: match.score,
+        description: `${match.name} with ${match.score}% compatibility`,
+        detailedDescription: `This business model scored ${match.score}% based on your quiz responses`,
+        difficulty: match.score >= 75 ? "Easy" : match.score >= 50 ? "Medium" : "Hard",
+        timeToProfit: match.score >= 80 ? "1-3 months" : match.score >= 60 ? "3-6 months" : "6+ months",
+        startupCost: match.score >= 70 ? "$0-500" : match.score >= 50 ? "$500-2000" : "$2000+",
+        potentialIncome: match.score >= 80 ? "$3K-10K+/month" : match.score >= 60 ? "$1K-5K/month" : "$500-2K/month",
+        pros: [`${match.score}% compatibility match`],
+        cons: match.score < 70 ? ["Lower compatibility score", "May require skill development"] : ["Minor adjustments needed"],
+        tools: ["Standard business tools"],
+        skills: ["Basic business skills"],
+        icon: "",
+        emoji: "",
+        marketSize: "Large",
+        averageIncome: { beginner: "$1K-3K", intermediate: "$3K-8K", advanced: "$8K-20K+" },
+        userStruggles: ["Getting started"],
+        solutions: ["Step-by-step guidance"],
+        bestFitPersonality: ["Motivated"],
+        resources: { platforms: ["LinkedIn"], learning: ["Online courses"], tools: ["CRM"] },
+        actionPlan: { phase1: ["Setup"], phase2: ["Launch"], phase3: ["Scale"] }
+      }));
 
+      // Get quizAttemptId from props, context, or localStorage
+      const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
+
+      const insights = await aiService.generatePersonalizedInsights(
+        quizData,
+        paths.slice(0, 3),
+        bottomPaths,
+        quizAttemptId,
+      );
+      
+
+      
+      // Construct complete AI insights object
+      const completeInsights = {
+        // AI-generated content from the API call
+        personalizedRecommendations: insights.personalizedRecommendations,
+        potentialChallenges: insights.potentialChallenges,
+        top3Fits: [
+          { model: paths[0]?.name || "Business Model", reason: insights.topFitExplanation || "Strong alignment with your profile" },
+          { model: paths[1]?.name || "Business Model", reason: "Good secondary option based on your skills" },
+          { model: paths[2]?.name || "Business Model", reason: "Solid alternative path for your capabilities" },
+        ],
+        bottom3Avoid: [
+          { model: "Business Model", reason: insights.bottomFitExplanation || "Lower compatibility with your current profile" },
+          { model: "Business Model", reason: "Misaligned with your goals and preferences" },
+          { model: "Business Model", reason: "Requires skills you haven't developed yet" },
+        ],
         
-        // Construct complete AI insights object
-        const completeInsights = {
-          // AI-generated content from the API call
-          personalizedRecommendations: insights.personalizedRecommendations,
-          potentialChallenges: insights.potentialChallenges,
-          top3Fits: [
-            { model: paths[0]?.name || "Business Model", reason: insights.topFitExplanation || "Strong alignment with your profile" },
-            { model: paths[1]?.name || "Business Model", reason: "Good secondary option based on your skills" },
-            { model: paths[2]?.name || "Business Model", reason: "Solid alternative path for your capabilities" },
-          ],
-          bottom3Avoid: [
-            { model: "Business Model", reason: insights.bottomFitExplanation || "Lower compatibility with your current profile" },
-            { model: "Business Model", reason: "Misaligned with your goals and preferences" },
-            { model: "Business Model", reason: "Requires skills you haven't developed yet" },
-          ],
-          
-          // Use 3-paragraph insights from Results page
-          personalizedSummary: resultsPageInsights?.analysis?.fullAnalysis || "Analysis will be pulled from Results page cache",
-          
-          // Hardcoded content
-          personalizedActionPlan: getActionPlanForModel(paths[0]?.name || ""),
-          motivationalMessage: MOTIVATIONAL_MESSAGE,
-          
-          // Hardcoded success strategies
-          successStrategies: [
-            "Focus on your top-scoring business model to maximize success potential",
-            "Leverage your strong skills while addressing identified challenges",
-            "Start small and scale gradually based on market feedback",
-            "Build a support network of mentors and fellow entrepreneurs",
-          ],
-          // FIXED: Add customRecommendations to match component expectations
-          customRecommendations: insights.personalizedRecommendations || [
-            "Focus on your top-scoring business model to maximize success potential",
-            "Leverage your strong skills while addressing identified challenges",
-            "Start small and scale gradually based on market feedback",
-            "Build a support network of mentors and fellow entrepreneurs",
-          ],
-        };
+        // Use 3-paragraph insights from Results page
+        personalizedSummary: resultsPageInsights?.analysis?.fullAnalysis || "Analysis will be pulled from Results page cache",
         
-        setAiInsights(completeInsights);
-      } catch (error) {
-        console.error("Error generating AI insights:", error);
-        // Set fallback insights that use actual quiz data
-        const fallbackInsights = `Based on your quiz responses, you show strong alignment with ${paths[0]?.name || "online business"} with a ${paths[0]?.fitScore || 75}% compatibility score. Your income goal of ${getIncomeRangeLabel(quizData.successIncomeGoal)} and ${getTimeCommitmentRangeLabel(quizData.weeklyTimeCommitment)} per week commitment indicate ${quizData.successIncomeGoal >= 5000 ? "ambitious" : "realistic"} expectations.
+        // Hardcoded content
+        personalizedActionPlan: getActionPlanForModel(paths[0]?.name || ""),
+        motivationalMessage: MOTIVATIONAL_MESSAGE,
+        
+        // Hardcoded success strategies
+        successStrategies: [
+          "Focus on your top-scoring business model to maximize success potential",
+          "Leverage your strong skills while addressing identified challenges",
+          "Start small and scale gradually based on market feedback",
+          "Build a support network of mentors and fellow entrepreneurs",
+        ],
+        // FIXED: Add customRecommendations to match component expectations
+        customRecommendations: insights.personalizedRecommendations || [
+          "Focus on your top-scoring business model to maximize success potential",
+          "Leverage your strong skills while addressing identified challenges",
+          "Start small and scale gradually based on market feedback",
+          "Build a support network of mentors and fellow entrepreneurs",
+        ],
+      };
+      
+      setAiInsights(completeInsights);
+    } catch (error) {
+      console.error("Error generating AI insights:", error);
+      // Set fallback insights that use actual quiz data
+      const fallbackInsights = `Based on your quiz responses, you show strong alignment with ${paths[0]?.name || "online business"} with a ${paths[0]?.fitScore || 75}% compatibility score. Your income goal of ${getIncomeRangeLabel(quizData.successIncomeGoal)} and ${getTimeCommitmentRangeLabel(quizData.weeklyTimeCommitment)} per week commitment indicate ${quizData.successIncomeGoal >= 5000 ? "ambitious" : "realistic"} expectations.
 
 Your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} tech skills combined with your ${quizData.learningPreference} learning preference suggests you're well-suited for ${quizData.techSkillsRating >= 4 ? "advanced" : "foundational"} business approaches. With ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance, you're positioned to ${quizData.riskComfortLevel >= 4 ? "explore innovative strategies" : "build systematically"}.
 
 This business path aligns with your ${quizData.workCollaborationPreference} work style and ${quizData.decisionMakingStyle} decision-making approach, creating strong potential for sustainable growth.`;
 
-        const fallbackKeyIndicators = [
-          `Strong alignment with ${quizData.workStructurePreference} work structure preferences`,
-          `${quizData.selfMotivationLevel >= 4 ? "High self-motivation" : "Good self-direction"} supports independent business building`,
-          `Your ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance matches entrepreneurial requirements`,
-          `Time commitment of ${getTimeCommitmentRangeLabel(quizData.weeklyTimeCommitment)} allows for realistic progress`,
-        ];
+      const fallbackKeyIndicators = [
+        `Strong alignment with ${quizData.workStructurePreference} work structure preferences`,
+        `${quizData.selfMotivationLevel >= 4 ? "High self-motivation" : "Good self-direction"} supports independent business building`,
+        `Your ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance matches entrepreneurial requirements`,
+        `Time commitment of ${getTimeCommitmentRangeLabel(quizData.weeklyTimeCommitment)} allows for realistic progress`,
+      ];
 
 
+      
+      setAiInsights({
+        // AI-generated content (fallback)
+        personalizedRecommendations: [
+          `Given your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} tech skills, ${quizData.techSkillsRating >= 4 ? "leverage your technical abilities" : "focus on user-friendly tools initially"}`,
+          `Your ${quizData.learningPreference} learning preference suggests ${quizData.learningPreference === "hands_on" ? "jumping into projects quickly" : "studying comprehensive guides first"}`,
+        ],
+        potentialChallenges: [
+          "Initial learning curve may require patience and persistence",
+          "Income may be inconsistent in the first few months",
+          "Success requires consistent daily action and follow-through",
+        ],
+        top3Fits: [
+          { model: paths[0]?.name || "Business Model", reason: "Strong alignment with your profile and goals" },
+          { model: paths[1]?.name || "Business Model", reason: "Good secondary option based on your skills" },
+          { model: paths[2]?.name || "Business Model", reason: "Solid alternative path for your capabilities" },
+        ],
+        bottom3Avoid: [
+          { model: "Business Model", reason: "Lower compatibility with your current profile" },
+          { model: "Business Model", reason: "Misaligned with your goals and preferences" },
+          { model: "Business Model", reason: "Requires skills you haven't developed yet" },
+        ],
         
-        setAiInsights({
-          // AI-generated content (fallback)
-          personalizedRecommendations: [
-            `Given your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} tech skills, ${quizData.techSkillsRating >= 4 ? "leverage your technical abilities" : "focus on user-friendly tools initially"}`,
-            `Your ${quizData.learningPreference} learning preference suggests ${quizData.learningPreference === "hands_on" ? "jumping into projects quickly" : "studying comprehensive guides first"}`,
-          ],
-          potentialChallenges: [
-            "Initial learning curve may require patience and persistence",
-            "Income may be inconsistent in the first few months",
-            "Success requires consistent daily action and follow-through",
-          ],
-          top3Fits: [
-            { model: paths[0]?.name || "Business Model", reason: "Strong alignment with your profile and goals" },
-            { model: paths[1]?.name || "Business Model", reason: "Good secondary option based on your skills" },
-            { model: paths[2]?.name || "Business Model", reason: "Solid alternative path for your capabilities" },
-          ],
-          bottom3Avoid: [
-            { model: "Business Model", reason: "Lower compatibility with your current profile" },
-            { model: "Business Model", reason: "Misaligned with your goals and preferences" },
-            { model: "Business Model", reason: "Requires skills you haven't developed yet" },
-          ],
-          
-          // Use 3-paragraph insights from Results page
-          personalizedSummary: resultsPageInsights?.analysis?.fullAnalysis || fallbackInsights,
-          
-          // Hardcoded content
-          personalizedActionPlan: getActionPlanForModel(paths[0]?.name || ""),
-          motivationalMessage: MOTIVATIONAL_MESSAGE,
-          
-          // Hardcoded success strategies
-          successStrategies: [
-            "Focus on your top-scoring business model to maximize success potential",
-            "Leverage your strong skills while addressing identified challenges",
-            "Start small and scale gradually based on market feedback",
-            "Build a support network of mentors and fellow entrepreneurs",
-          ],
-          // FIXED: Add customRecommendations to match component expectations
-          customRecommendations: insights.personalizedRecommendations || [
-            "Focus on your top-scoring business model to maximize success potential",
-            "Leverage your strong skills while addressing identified challenges",
-            "Start small and scale gradually based on market feedback",
-            "Build a support network of mentors and fellow entrepreneurs",
-          ],
-        });
-        // DO NOT cache fallback insights or analysis!
-      } finally {
-        setIsLoadingInsights(false);
-      }
-    };
+        // Use 3-paragraph insights from Results page
+        personalizedSummary: resultsPageInsights?.analysis?.fullAnalysis || fallbackInsights,
+        
+        // Hardcoded content
+        personalizedActionPlan: getActionPlanForModel(paths[0]?.name || ""),
+        motivationalMessage: MOTIVATIONAL_MESSAGE,
+        
+        // Hardcoded success strategies
+        successStrategies: [
+          "Focus on your top-scoring business model to maximize success potential",
+          "Leverage your strong skills while addressing identified challenges",
+          "Start small and scale gradually based on market feedback",
+          "Build a support network of mentors and fellow entrepreneurs",
+        ],
+        // FIXED: Add customRecommendations to match component expectations
+        customRecommendations: [
+          "Focus on your top-scoring business model to maximize success potential",
+          "Leverage your strong skills while addressing identified challenges",
+          "Start small and scale gradually based on market feedback",
+          "Build a support network of mentors and fellow entrepreneurs",
+        ],
+      });
+      // DO NOT cache fallback insights or analysis!
+    } finally {
+      setIsLoadingInsights(false);
+    }
+  };
 
-    // Generate detailed business fit descriptions
-    const generateBusinessFitDescriptions = async () => {
-      try {
-        const top3Paths = topThreeAdvanced.slice(0, 3);
-        const response = await fetch(
-          "/api/generate-business-fit-descriptions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              quizData,
-              businessMatches: top3Paths,
-            }),
+  // Generate detailed business fit descriptions
+  const generateBusinessFitDescriptions = async () => {
+    try {
+      const top3Paths = topThreeAdvanced.slice(0, 3);
+      const response = await fetch(
+        "/api/generate-business-fit-descriptions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            quizData,
+            businessMatches: top3Paths,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate business fit descriptions");
+      }
+
+      const data = await response.json();
+      const descriptionsMap: { [key: string]: string } = {};
+
+      data.descriptions.forEach(
+        (desc: { businessId: string; description: string }) => {
+          descriptionsMap[desc.businessId] = desc.description;
+        },
+      );
+
+      setBusinessFitDescriptions(descriptionsMap);
+    } catch (error) {
+      console.error("Error generating business fit descriptions:", error);
+      // Set fallback descriptions
+      const fallbackDescriptions: { [key: string]: string } = {};
+      topThreeAdvanced.slice(0, 3).forEach((match, index) => {
+        // Get the actual business data to access startupCost and potentialIncome
+        const businessData = personalizedPaths.find(
+          (path) => path.id === match.id,
         );
+        fallbackDescriptions[match.id] =
+          `This business model aligns exceptionally well with your ${quizData.selfMotivationLevel >= 4 ? "high self-motivation" : "self-driven nature"} and ${quizData.weeklyTimeCommitment} hours/week availability. Your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} technical skills and ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance make this a ${index === 0 ? "perfect" : index === 1 ? "excellent" : "good"} match for your entrepreneurial journey.${businessData ? ` The startup cost of ${businessData.startupCost} and potential for ${businessData.potentialIncome} income directly align with your upfront investment budget of $${quizData.upfrontInvestment} and income goal of $${quizData.successIncomeGoal}/month.` : ""}
 
-        if (!response.ok) {
-          throw new Error("Failed to generate business fit descriptions");
-        }
+${index === 0 ? "As your top match, this path offers the best alignment with your goals and preferences." : index === 1 ? "This represents a strong secondary option that complements your primary strengths." : "This provides a solid alternative path that matches your core capabilities."} Your ${quizData.learningPreference?.replace("-", " ")} learning style means you'll excel in the learning curve required for this business model. With your ${quizData.workStructurePreference?.replace("-", " ")} work preference and ${quizData.workCollaborationPreference} collaboration style, this business structure will feel natural and sustainable for long-term success.`;
+      });
+      setBusinessFitDescriptions(fallbackDescriptions);
+    } finally {
+      setIsLoadingDescriptions(false);
+    }
+  };
 
-        const data = await response.json();
-        const descriptionsMap: { [key: string]: string } = {};
+  // Generate detailed business avoid descriptions
+  const generateBusinessAvoidDescriptions = async () => {
+    try {
+      setIsLoadingDescriptions(true);
 
+
+
+      const allMatches =
+        businessModelService.getBusinessModelMatches(quizData);
+
+      // Get the bottom 3 business models (worst matches) from context
+      const bottomThree = getBottomMatches(3);
+
+      const businessMatches = bottomThree.map((match) => {
+        const pathData = businessPaths.find((path) => path.id === match.id);
+        return {
+          id: match.id,
+          name: match.name,
+          fitScore: match.score,
+          description:
+            pathData?.description ||
+            "Business model description not available",
+          timeToProfit: pathData?.timeToProfit || "Variable",
+          startupCost: pathData?.startupCost || "Variable",
+          potentialIncome: pathData?.potentialIncome || "Variable",
+        };
+      });
+
+      const response = await fetch(
+        "/api/generate-business-avoid-descriptions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            quizData: quizData,
+            businessMatches: businessMatches,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to generate business avoid descriptions");
+      }
+
+      const data = await response.json();
+      const descriptionsMap: { [key: string]: string } = {};
+
+      if (data && data.descriptions && Array.isArray(data.descriptions)) {
         data.descriptions.forEach(
           (desc: { businessId: string; description: string }) => {
             descriptionsMap[desc.businessId] = desc.description;
           },
         );
+      }
 
-        setBusinessFitDescriptions(descriptionsMap);
+      setBusinessAvoidDescriptions(descriptionsMap);
+    } catch (error) {
+      console.error("Error generating business avoid descriptions:", error);
+      // Set fallback descriptions
+      const fallbackDescriptions: { [key: string]: string } = {};
+      const allMatches =
+        businessModelScores ||
+        businessModelService.getBusinessModelMatches(quizData);
+      const bottomThree = getBottomMatches(3);
+
+      bottomThree.forEach((match) => {
+        fallbackDescriptions[match.id] =
+          `This business model scored ${match.score}% for your profile, indicating significant misalignment with your current goals, skills, and preferences. Based on your quiz responses, you would likely face substantial challenges in this field that could impact your success. Consider focusing on higher-scoring business models that better match your natural strengths and current situation. Your ${quizData.riskComfortLevel <= 2 ? "lower risk tolerance" : "risk preferences"} and ${quizData.weeklyTimeCommitment} hours/week availability suggest other business models would be more suitable for your entrepreneurial journey.`;
+      });
+      setBusinessAvoidDescriptions(fallbackDescriptions);
+    }
+  };
+
+  // Use preloaded data if available, otherwise generate from scratch
+  if (preloadedData) {
+    setPersonalizedPaths(preloadedData.personalizedPaths);
+    setAiInsights(preloadedData.aiInsights);
+    setAllCharacteristics(preloadedData.allCharacteristics);
+    setBusinessFitDescriptions(preloadedData.businessFitDescriptions);
+    setBusinessAvoidDescriptions(
+      preloadedData.businessAvoidDescriptions || {},
+    );
+    setIsLoadingInsights(false);
+    setIsLoadingDescriptions(false);
+  } else {
+    // Generate AI-powered personalized paths
+    const loadPersonalizedPaths = async () => {
+      try {
+        const paths = await generateAIPersonalizedPaths(quizData);
+        setPersonalizedPaths(paths);
+
+        // Generate AI insights after paths are loaded
+        generateInsights(paths);
+
+        // Generate business fit descriptions
+        generateBusinessFitDescriptions();
+
+        // Generate business avoid descriptions
+        generateBusinessAvoidDescriptions();
       } catch (error) {
-        console.error("Error generating business fit descriptions:", error);
-        // Set fallback descriptions
-        const fallbackDescriptions: { [key: string]: string } = {};
-        topThreeAdvanced.slice(0, 3).forEach((match, index) => {
-          // Get the actual business data to access startupCost and potentialIncome
-          const businessData = personalizedPaths.find(
+        console.error(
+          "Failed to load AI paths in Full Report, using fallback:",
+          error,
+        );
+        // Use cached scores from context, fallback to calculation if needed
+        let fallbackMatches = businessModelScores;
+        if (!fallbackMatches) {
+          console.warn(
+            "⚠️ No cached scores in FullReport fallback, calculating...",
+          );
+          fallbackMatches =
+            businessModelService.getBusinessModelMatches(quizData);
+        }
+
+        const fallbackPaths = fallbackMatches.map((match) => {
+          const businessPath = businessPaths.find(
             (path) => path.id === match.id,
           );
-          fallbackDescriptions[match.id] =
-            `This business model aligns exceptionally well with your ${quizData.selfMotivationLevel >= 4 ? "high self-motivation" : "self-driven nature"} and ${quizData.weeklyTimeCommitment} hours/week availability. Your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} technical skills and ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance make this a ${index === 0 ? "perfect" : index === 1 ? "excellent" : "good"} match for your entrepreneurial journey.${businessData ? ` The startup cost of ${businessData.startupCost} and potential for ${businessData.potentialIncome} income directly align with your upfront investment budget of $${quizData.upfrontInvestment} and income goal of $${quizData.successIncomeGoal}/month.` : ""}
-
-${index === 0 ? "As your top match, this path offers the best alignment with your goals and preferences." : index === 1 ? "This represents a strong secondary option that complements your primary strengths." : "This provides a solid alternative path that matches your core capabilities."} Your ${quizData.learningPreference?.replace("-", " ")} learning style means you'll excel in the learning curve required for this business model. With your ${quizData.workStructurePreference?.replace("-", " ")} work preference and ${quizData.workCollaborationPreference} collaboration style, this business structure will feel natural and sustainable for long-term success.`;
+          return { ...businessPath!, fitScore: match.score };
         });
-        setBusinessFitDescriptions(fallbackDescriptions);
-      } finally {
-        setIsLoadingDescriptions(false);
+        setPersonalizedPaths(fallbackPaths);
+
+        // Generate AI insights with fallback paths
+        generateInsights(fallbackPaths);
+
+        // Generate business fit descriptions
+        generateBusinessFitDescriptions();
+
+        // Generate business avoid descriptions
+        generateBusinessAvoidDescriptions();
       }
     };
 
-    // Generate detailed business avoid descriptions
-    const generateBusinessAvoidDescriptions = async () => {
-      try {
-        setIsLoadingDescriptions(true);
+    loadPersonalizedPaths();
 
-
-
-        const allMatches =
-          businessModelService.getBusinessModelMatches(quizData);
-
-        // Get the bottom 3 business models (worst matches) from context
-        const bottomThree = getBottomMatches(3);
-
-        const businessMatches = bottomThree.map((match) => {
-          const pathData = businessPaths.find((path) => path.id === match.id);
-          return {
-            id: match.id,
-            name: match.name,
-            fitScore: match.score,
-            description:
-              pathData?.description ||
-              "Business model description not available",
-            timeToProfit: pathData?.timeToProfit || "Variable",
-            startupCost: pathData?.startupCost || "Variable",
-            potentialIncome: pathData?.potentialIncome || "Variable",
-          };
-        });
-
-        const response = await fetch(
-          "/api/generate-business-avoid-descriptions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              quizData: quizData,
-              businessMatches: businessMatches,
-            }),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to generate business avoid descriptions");
-        }
-
-        const data = await response.json();
-        const descriptionsMap: { [key: string]: string } = {};
-
-        if (data && data.descriptions && Array.isArray(data.descriptions)) {
-          data.descriptions.forEach(
-            (desc: { businessId: string; description: string }) => {
-              descriptionsMap[desc.businessId] = desc.description;
-            },
-          );
-        }
-
-        setBusinessAvoidDescriptions(descriptionsMap);
-      } catch (error) {
-        console.error("Error generating business avoid descriptions:", error);
-        // Set fallback descriptions
-        const fallbackDescriptions: { [key: string]: string } = {};
-        const allMatches =
-          businessModelScores ||
-          businessModelService.getBusinessModelMatches(quizData);
-        const bottomThree = getBottomMatches(3);
-
-        bottomThree.forEach((match) => {
-          fallbackDescriptions[match.id] =
-            `This business model scored ${match.score}% for your profile, indicating significant misalignment with your current goals, skills, and preferences. Based on your quiz responses, you would likely face substantial challenges in this field that could impact your success. Consider focusing on higher-scoring business models that better match your natural strengths and current situation. Your ${quizData.riskComfortLevel <= 2 ? "lower risk tolerance" : "risk preferences"} and ${quizData.weeklyTimeCommitment} hours/week availability suggest other business models would be more suitable for your entrepreneurial journey.`;
-        });
-        setBusinessAvoidDescriptions(fallbackDescriptions);
-      }
-    };
-
-    // Use preloaded data if available, otherwise generate from scratch
-    if (preloadedData) {
-      setPersonalizedPaths(preloadedData.personalizedPaths);
-      setAiInsights(preloadedData.aiInsights);
-      setAllCharacteristics(preloadedData.allCharacteristics);
-      setBusinessFitDescriptions(preloadedData.businessFitDescriptions);
-      setBusinessAvoidDescriptions(
-        preloadedData.businessAvoidDescriptions || {},
-      );
-      setIsLoadingInsights(false);
-      setIsLoadingDescriptions(false);
-    } else {
-      // Generate AI-powered personalized paths
-      const loadPersonalizedPaths = async () => {
-        try {
-          const paths = await generateAIPersonalizedPaths(quizData);
-          setPersonalizedPaths(paths);
-
-          // Generate AI insights after paths are loaded
-          generateInsights(paths);
-
-          // Generate business fit descriptions
-          generateBusinessFitDescriptions();
-
-          // Generate business avoid descriptions
-          generateBusinessAvoidDescriptions();
-        } catch (error) {
-          console.error(
-            "Failed to load AI paths in Full Report, using fallback:",
-            error,
-          );
-          // Use cached scores from context, fallback to calculation if needed
-          let fallbackMatches = businessModelScores;
-          if (!fallbackMatches) {
-            console.warn(
-              "⚠️ No cached scores in FullReport fallback, calculating...",
-            );
-            fallbackMatches =
-              businessModelService.getBusinessModelMatches(quizData);
-          }
-
-          const fallbackPaths = fallbackMatches.map((match) => {
-            const businessPath = businessPaths.find(
-              (path) => path.id === match.id,
-            );
-            return { ...businessPath!, fitScore: match.score };
-          });
-          setPersonalizedPaths(fallbackPaths);
-
-          // Generate AI insights with fallback paths
-          generateInsights(fallbackPaths);
-
-          // Generate business fit descriptions
-          generateBusinessFitDescriptions();
-
-          // Generate business avoid descriptions
-          generateBusinessAvoidDescriptions();
-        }
-      };
-
-      loadPersonalizedPaths();
-
-      // Generate all 6 characteristics with OpenAI only if no preloaded data
-      generateAllCharacteristics();
-    }
-  }, [quizData]);
+    // Generate all 6 characteristics with OpenAI only if no preloaded data
+    generateAllCharacteristics();
+  }
 
   // Scroll to Executive Summary section
   const scrollToExecutiveSummary = () => {
@@ -993,9 +1005,10 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
     const mappedId = mapScoringIdToBusinessPathId(businessId);
     navigate(`/business-model/${mappedId}`);
     // Scroll to top after navigation
-    setTimeout(() => {
+    const scrollTimeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "instant" });
     }, 0);
+    timeouts.current.add(scrollTimeout);
   };
 
   const handleDownloadPDF = async () => {
@@ -1326,7 +1339,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                                 <Star className="h-4 w-4 text-yellow-500 mr-2 mt-1 flex-shrink-0" />
                                 <span
                                   className="text-gray-700"
-                                  dangerouslySetInnerHTML={renderMarkdownContent(
+                                  dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                     strategy,
                                   )}
                                 />
@@ -1352,7 +1365,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                                 <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
                                 <span
                                   className="text-gray-700"
-                                  dangerouslySetInnerHTML={renderMarkdownContent(
+                                  dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                     rec,
                                   )}
                                 />
@@ -1380,7 +1393,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                               <AlertTriangle className="h-4 w-4 text-orange-500 mr-2 mt-1 flex-shrink-0" />
                               <span
                                 className="text-gray-700"
-                                dangerouslySetInnerHTML={renderMarkdownContent(
+                                dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                   challenge,
                                 )}
                               />
@@ -1531,7 +1544,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                         ) : (
                           <div
                             className="text-blue-800 text-sm whitespace-pre-line"
-                            dangerouslySetInnerHTML={renderMarkdownContent(
+                            dangerouslySetInnerHTML={renderSafeMarkdownContent(
                               businessFitDescriptions[path.id] ||
                                 `This business model aligns exceptionally well with your ${quizData.selfMotivationLevel >= 4 ? "high self-motivation" : "self-driven nature"} and ${quizData.weeklyTimeCommitment} hours/week availability. Your ${quizData.techSkillsRating >= 4 ? "strong" : "adequate"} technical skills and ${quizData.riskComfortLevel >= 4 ? "high" : "moderate"} risk tolerance make this a ${index === 0 ? "perfect" : index === 1 ? "excellent" : "good"} match for your entrepreneurial journey. The startup cost of ${path.startupCost} and potential for ${path.potentialIncome} income directly align with your upfront investment budget of $${quizData.upfrontInvestment} and income goal of $${quizData.successIncomeGoal}/month.
 
@@ -1615,7 +1628,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                         ) : (
                           <div
                             className="text-red-800 text-sm whitespace-pre-line"
-                            dangerouslySetInnerHTML={renderMarkdownContent(
+                            dangerouslySetInnerHTML={renderSafeMarkdownContent(
                               businessAvoidDescriptions[path.id] ||
                                 `This business model scored ${path.fitScore}% for your profile, indicating significant misalignment with your current goals, skills, and preferences. Based on your quiz responses, you would likely face substantial challenges in this field that could impact your success. Consider focusing on higher-scoring business models that better match your natural strengths and current situation. Your ${quizData.riskComfortLevel <= 2 ? "lower risk tolerance" : "risk preferences"} and ${quizData.weeklyTimeCommitment} hours/week availability suggest other business models would be more suitable for your entrepreneurial journey. Focus on the business models that scored higher in your assessment for the best chance of success.`,
                             )}
@@ -1949,9 +1962,10 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
                   <button
                     onClick={() => {
                       navigate("/explore");
-                      setTimeout(() => {
+                      const exploreTimeout = setTimeout(() => {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }, 100);
+                      timeouts.current.add(exploreTimeout);
                     }}
                     className="border border-white text-white px-6 py-3 rounded-xl font-semibold hover:bg-white/10 transition-colors"
                   >

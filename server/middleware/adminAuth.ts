@@ -1,6 +1,6 @@
 // Proper Admin Authentication Middleware
 import { Request, Response, NextFunction } from "express-serve-static-core";
-import { createErrorResponse } from "../utils/errorHandler.js";
+import { createErrorResponse } from "../utils/errorHandler";
 
 interface AdminAuthRequest extends Request {
   admin?: {
@@ -15,7 +15,7 @@ const adminSessions = new Map<string, { timestamp: number; id: string }>();
 const ADMIN_SESSION_DURATION = 2 * 60 * 60 * 1000; // 2 hours
 
 // Cleanup expired admin sessions
-setInterval(
+const adminSessionCleanupInterval = setInterval(
   () => {
     const now = Date.now();
     let cleanedCount = 0;
@@ -36,6 +36,18 @@ setInterval(
   },
   15 * 60 * 1000,
 ); // Clean every 15 minutes
+
+// Cleanup function to prevent memory leaks
+const cleanup = () => {
+  if (adminSessionCleanupInterval) {
+    clearInterval(adminSessionCleanupInterval);
+  }
+};
+
+// Clean up on process exit
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+process.on('exit', cleanup);
 
 /**
  * Admin authentication middleware with proper security

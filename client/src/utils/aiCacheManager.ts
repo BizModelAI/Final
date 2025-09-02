@@ -1,5 +1,5 @@
 // AI Cache Manager - 1-hour cache for current session, cleared between new quiz attempts
-import { QuizData, BusinessPath, AIAnalysis } from "../types";
+import { BusinessPath, AIAnalysis } from "../types";
 
 interface AIInsights {
   personalizedSummary: string;
@@ -84,7 +84,11 @@ export class AICacheManager {
               const quizAttemptId = key.replace('ai-content-', '');
               unsynced.push({ quizAttemptId, data });
             }
-          } catch {}
+          } catch (error) {
+            console.warn(`Failed to parse cached AI content for key ${key}:`, error);
+            // Remove corrupted cache entry
+            localStorage.removeItem(key);
+          }
         }
       }
     }

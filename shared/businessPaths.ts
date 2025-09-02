@@ -1,4 +1,4 @@
-import { BusinessPath } from "./types.js";
+import { BusinessPath } from "./types";
 
 export const businessPaths: BusinessPath[] = [
   {
@@ -2239,100 +2239,6 @@ export const businessPaths: BusinessPath[] = [
         "Focus on premium clients",
         "Create scalable processes",
         "Consider team expansion",
-      ],
-    },
-  },
-  {
-    id: "e-commerce",
-    name: "E-Commerce",
-    emoji: "🛒",
-    description:
-      "Sell products through online stores or marketplaces",
-    detailedDescription:
-      "E-commerce involves building and selling products through your own online store. This gives you full control over branding, customer experience, and business operations. E-commerce businesses can sell physical products, digital products, or services through platforms like Shopify, WooCommerce, or custom websites.",
-    fitScore: 0,
-    difficulty: "Medium",
-    timeToProfit: "2-12 months",
-    startupCost: "$500-10K",
-    potentialIncome: "$2K-100K+/month",
-    pros: [
-      "Full business control",
-      "Brand building",
-      "Scalable model",
-      "Multiple revenue streams",
-      "Customer data ownership",
-      "Global reach",
-    ],
-    cons: [
-      "High upfront investment",
-      "Inventory management",
-      "Customer service demands",
-      "Marketing costs",
-      "Technical complexity",
-      "Competition",
-    ],
-    tools: [
-      "Shopify",
-      "WooCommerce",
-      "Mailchimp",
-      "Google Analytics",
-      "Canva",
-    ],
-    skills: [
-      "Product development",
-      "Brand building",
-      "Website management",
-      "Digital marketing",
-      "Customer service",
-    ],
-    icon: "🛒",
-    marketSize: "E-commerce market worth $5T+ globally",
-    averageIncome: {
-      beginner: "$1K-5K/month",
-      intermediate: "$5K-25K/month",
-      advanced: "$25K-100K+/month",
-    },
-    userStruggles: [
-      "Product development",
-      "Customer acquisition",
-      "Inventory management",
-      "Competition with large retailers",
-    ],
-    solutions: [
-      "Focus on unique products",
-      "Build strong brand identity",
-      "Use inventory management tools",
-      "Create excellent customer experience",
-    ],
-    bestFitPersonality: [
-      "Product-focused mindset",
-      "Brand building interest",
-      "Comfortable with technology",
-      "Customer service oriented",
-    ],
-    resources: {
-      platforms: ["Shopify", "WooCommerce", "Amazon"],
-      learning: ["E-commerce courses", "Digital marketing training"],
-      tools: ["Shopify", "Mailchimp", "Google Analytics"],
-    },
-    actionPlan: {
-      phase1: [
-        "Research product opportunities",
-        "Choose e-commerce platform",
-        "Set up online store",
-        "Launch first products",
-      ],
-      phase2: [
-        "Optimize website conversion",
-        "Implement marketing strategies",
-        "Build customer base",
-        "Expand product line",
-      ],
-      phase3: [
-        "Scale operations",
-        "Explore new markets",
-        "Build brand authority",
-        "Consider acquisitions",
       ],
     },
   },

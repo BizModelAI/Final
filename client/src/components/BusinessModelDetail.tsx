@@ -1,29 +1,22 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
   TrendingUp,
   Clock,
   DollarSign,
-  Users,
   CheckCircle,
   AlertTriangle,
   Star,
   Target,
   Brain,
-  Lightbulb,
   Calendar,
   BarChart3,
   Award,
   Zap,
   BookOpen,
-  Monitor,
-  MessageCircle,
-  Shield,
-  Briefcase,
-  Heart,
   Loader,
   Lock,
   Crown,
@@ -45,13 +38,10 @@ import { useAuth } from "../contexts/AuthContext";
 import { PaywallModal } from "./PaywallModals";
 import { PaymentAccountModal } from "./PaymentAccountModal";
 import { SkillsAnalysisService, SkillsAnalysis } from "../utils/skillsAnalysis";
-import {
-  businessTools,
-  defaultBusinessTools,
-  BusinessTool,
-} from "../data/businessTools";
+
+
 import { IncomeProjectionChart } from "./IncomeProjectionChart";
-import { renderMarkdownContent } from "../utils/markdownUtils";
+import { renderSafeMarkdownContent } from "../utils/safeMarkdownUtils";
 import { getSafeEmoji } from '../utils/contentUtils';
 
 // Generate psychological fit description based on fit category
@@ -150,6 +140,9 @@ const BusinessModelDetail: React.FC<BusinessModelDetailProps> = ({
   const { hasCompletedQuiz, canAccessBusinessModel, setHasUnlockedAnalysis } =
     usePaywall();
   const { user, isRealUser, getLatestQuizData } = useAuth();
+  
+  // Refs to store event listeners for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: EventListener }>>([]);
 
   // Calculate fit category based on actual quiz data if available
   const fitCategory = useMemo(() => {
@@ -470,8 +463,20 @@ ${fitCategory === "Best Fit" ? "This represents an excellent match for your curr
     };
 
     window.addEventListener("scroll", handleScroll);
+    eventListeners.current.push({ element: window, type: "scroll", handler: handleScroll });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [businessPath, businessModel]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+    };
+  }, []);
 
   const handlePaywallUnlock = () => {
     // DEV bypass disabled - always redirect to proper payment flow
@@ -840,7 +845,7 @@ ${fitCategory === "Best Fit" ? "This represents an excellent match for your curr
                           .map((paragraph: string, index: number) => (
                             <p
                               key={index}
-                              dangerouslySetInnerHTML={renderMarkdownContent(
+                              dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                 paragraph.trim(),
                               )}
                             />
@@ -881,7 +886,7 @@ ${fitCategory === "Best Fit" ? "This represents an excellent match for your curr
                                 )}
                                 <span
                                   className="text-gray-700"
-                                  dangerouslySetInnerHTML={renderMarkdownContent(
+                                  dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                     insight,
                                   )}
                                 />
@@ -930,7 +935,7 @@ ${fitCategory === "Best Fit" ? "This represents an excellent match for your curr
                                 )}
                                 <span
                                   className="text-gray-700"
-                                  dangerouslySetInnerHTML={renderMarkdownContent(
+                                  dangerouslySetInnerHTML={renderSafeMarkdownContent(
                                     predictor,
                                   )}
                                 />

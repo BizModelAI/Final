@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp } from "lucide-react";
 
 const ScrollToTop: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Refs to store event listeners for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: EventListener }>>([]);
 
   // Show button when page is scrolled down
   useEffect(() => {
@@ -19,7 +22,19 @@ const ScrollToTop: React.FC = () => {
     toggleVisibility();
 
     window.addEventListener("scroll", toggleVisibility);
+    eventListeners.current.push({ element: window, type: "scroll", handler: toggleVisibility });
     return () => window.removeEventListener("scroll", toggleVisibility);
+  }, []);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+    };
   }, []);
 
   const scrollToTop = () => {

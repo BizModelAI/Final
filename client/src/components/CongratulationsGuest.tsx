@@ -1,16 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Mail,
   ArrowRight,
-  X,
   CheckCircle,
   Clock,
   Star,
-  Zap,
 } from "lucide-react";
 import type { QuizData } from "../types";
-import { getSessionId } from "../../../shared/utils";
 import { useNavigate } from "react-router-dom";
 // import { Modal } from "./ui/modal"; // If you have a modal component, otherwise use a simple div
 // import { v4 as uuidv4 } from 'uuid';
@@ -96,6 +93,9 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // --- Auto-save quizData and attemptId to localStorage on mount and every 10s ---
   useEffect(() => {
@@ -129,6 +129,17 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
       clearTimeout(autoRedirectTimeout);
     };
   }, [quizData, navigate]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
 
   const validateEmail = (email: string) => {
@@ -217,6 +228,7 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
       if (saveSuccess) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for email sending
+        timeouts.current.add(timeoutId);
         const emailRes = await fetch("/api/send-quiz-results", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -230,9 +242,10 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
         clearTimeout(timeoutId);
         if (emailRes.ok) {
           setEmailSent(true);
-          setTimeout(() => {
+          const successTimeout = setTimeout(() => {
             onStartAIGeneration(email);
           }, 1000); // Show success for 1s before navigating
+          timeouts.current.add(successTimeout);
         } else {
           setEmailSent(false);
           setEmailError("Failed to send email. Please try again.");

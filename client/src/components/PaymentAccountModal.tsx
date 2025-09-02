@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -36,6 +36,10 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { signup, login, user, deleteAccount } = useAuth();
   const { setHasUnlockedAnalysis, setHasCompletedQuiz } = usePaywall();
+  
+  // Refs to store event listeners and timeouts for cleanup
+  const eventListeners = useRef<Array<{ element: EventTarget; type: string; handler: EventListener }>>([]);
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   const [error, setError] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
@@ -113,12 +117,30 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
 
     if (step === "payment" && user) {
       window.addEventListener("beforeunload", handleBeforeUnload);
+      eventListeners.current.push({ element: window, type: "beforeunload", handler: handleBeforeUnload });
     }
 
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [step, user]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Remove all event listeners
+      eventListeners.current.forEach(({ element, type, handler }) => {
+        element.removeEventListener(type, handler);
+      });
+      eventListeners.current = [];
+      
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   // Auto-advance to payment step if user is already logged in
   useEffect(() => {
@@ -381,9 +403,6 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
       localStorage.setItem("userEmail", loginEmail);
 
       // Always save quiz data after login to ensure we have a fresh quiz attempt ID
-      // NOTE: /api/save-quiz-data is not implemented in the new backend.
-      // TODO: Implement this endpoint or update this logic if saving quiz data is required.
-      /*
       const savedQuizData = localStorage.getItem("quizData");
       
       if (savedQuizData) {
@@ -391,7 +410,7 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
           const quizData = JSON.parse(savedQuizData);
           console.log("PaymentAccountModal: Saving quiz data after login for user:", loginEmail);
           
-          const saveResponse = await fetch("/api/save-quiz-data", {
+          const saveResponse = await fetch("/api/auth/save-quiz-data", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -399,11 +418,18 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
             credentials: "include",
             body: JSON.stringify({ quizData }),
           });
+
+          if (saveResponse.ok) {
+            const responseData = await saveResponse.json();
+            if (responseData.quizAttemptId) {
+              localStorage.setItem("currentQuizAttemptId", responseData.quizAttemptId.toString());
+              console.log(`Quiz attempt ID ${responseData.quizAttemptId} saved after login`);
+            }
+          }
         } catch (error) {
           console.error("Error saving quiz data after login:", error);
         }
       }
-      */
 
       // In the new pay-per-report model, logged-in users proceed to payment for report unlock
       await fetchReportPricing(); // Get the correct pricing for this user
@@ -467,9 +493,10 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
     onSuccess();
 
     // Force a reload to ensure the site updates with latest quiz and full access
-    setTimeout(() => {
+    const reloadTimeout = setTimeout(() => {
       window.location.reload();
     }, 100);
+    timeouts.current.add(reloadTimeout);
   };
 
   const handlePaymentError = (errorMessage: string) => {

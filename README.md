@@ -1,37 +1,38 @@
-# BizModelAI
+# BizModelAI - AI-Powered Business Model Discovery
 
-A comprehensive AI-powered platform for business model discovery and entrepreneurial assessment.
+Discover your perfect business model with AI-powered analysis. Get personalized recommendations, detailed insights, and actionable strategies tailored to your goals and skills.
 
-## 🚀 Deploy to Vercel
+## 🚀 Deploy to Render
 
-This project is configured for easy deployment to Vercel. Follow these steps:
+This project is configured for easy deployment to Render. Follow these steps:
 
-### 1. Push to Git Repository
+### 1. Prerequisites
 
-First, push all your code to a Git repository (GitHub, GitLab, or Bitbucket):
+- A Render account
+- A PostgreSQL database (Render PostgreSQL or external)
+- Environment variables configured
 
-```bash
-git add .
-git commit -m "Initial commit - BizModelAI complete application"
-git push origin main
-```
+### 2. Deploy to Render
 
-### 2. Deploy to Vercel
-
-1. Go to [vercel.com](https://vercel.com) and sign up/login
-2. Click "New Project"
-3. Import your Git repository
-4. Vercel will automatically detect this is a Node.js project
-5. Click "Deploy"
+1. Go to [render.com](https://render.com) and sign up/login
+2. Click "New +" and select "Web Service"
+3. Connect your Git repository
+4. Configure the service:
+   - **Name**: `bizmodelai` (or your preferred name)
+   - **Environment**: `Node`
+   - **Build Command**: `yarn install && yarn build`
+   - **Start Command**: `yarn start`
+   - **Root Directory**: Leave empty (root of repo)
 
 ### 3. Set Environment Variables
 
-In your Vercel project dashboard, go to Settings → Environment Variables and add:
+In your Render service dashboard, go to Environment → Environment Variables and add:
 
 **Required:**
 
 - `DATABASE_URL` - Your PostgreSQL database connection string
 - `SESSION_SECRET` - A random secret for session management
+- `NODE_ENV` - Set to `production`
 
 **Optional (for full functionality):**
 
@@ -49,14 +50,15 @@ In your Vercel project dashboard, go to Settings → Environment Variables and a
 
 The app uses PostgreSQL. You can use:
 
-- **Supabase** (recommended): Free tier available
+- **Render PostgreSQL**: Create a new PostgreSQL service in Render
+- **Supabase**: Free tier available
 - **Neon**: Serverless PostgreSQL
 - **PlanetScale**: MySQL-compatible option
 - **Railway**: Simple database hosting
 
-### 5. Redeploy
+### 5. Deploy
 
-After adding environment variables, trigger a redeploy from the Vercel dashboard.
+Click "Create Web Service" and Render will automatically deploy your application.
 
 ## 📁 Project Structure
 
@@ -72,36 +74,35 @@ BizModelAI/
 │   ├── services/           # Business logic
 │   └── routes.ts           # API routes
 ├── shared/                 # Shared types and utilities
-├── vercel.json            # Vercel deployment config
-└── package.json           # Dependencies and scripts
+├── package.json           # Dependencies and scripts
+└── README.md              # This file
 ```
 
 ## 🛠️ Local Development
 
 ```bash
 # Install dependencies
-npm install
+yarn install
 
 # Start development server
-npm run dev
+yarn dev
 
 # Build for production
-npm run build
+yarn build
 
 # Start production server
-npm start
+yarn start
 ```
 
 ## Development Ports
 
 - **Backend (API server):** Always runs on [http://localhost:9000](http://localhost:9000)
 - **Frontend (Vite dev server):** Always runs on [http://localhost:5173](http://localhost:5173)
-- **SSR/Root-level Vite (if used):** Runs on [http://localhost:9001](http://localhost:9001)
 
 If you see an error like `EADDRINUSE: address already in use`, another process is using that port. Kill it with:
 
 ```
-lsof -i :9000 # or :5173 or :9001
+lsof -i :9000 # or :5173
 kill -9 <PID>
 ```
 

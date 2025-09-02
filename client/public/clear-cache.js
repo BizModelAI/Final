@@ -26,6 +26,24 @@ if ("caches" in window) {
 }
 
 console.log("Cache cleared, reloading...");
-setTimeout(() => {
+const reloadTimeout = setTimeout(() => {
   window.location.reload(true);
 }, 1000);
+
+// Cleanup function to prevent memory leaks
+const cleanup = () => {
+  if (reloadTimeout) {
+    clearTimeout(reloadTimeout);
+  }
+};
+
+// Clean up if the script is unloaded before timeout completes
+window.addEventListener('beforeunload', cleanup);
+
+// Clean up the event listener when possible
+const cleanupEventListeners = () => {
+  window.removeEventListener('beforeunload', cleanup);
+};
+
+// Try to clean up on page unload (though this may not always work)
+window.addEventListener('unload', cleanupEventListeners);

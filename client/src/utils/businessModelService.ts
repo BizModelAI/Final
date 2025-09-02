@@ -1,5 +1,5 @@
 import { QuizData } from "../types";
-import { calculateAllBusinessModelMatches } from "./advancedScoringAlgorithm";
+import { calculateAllBusinessModelMatches } from "../../../shared/scoring";
 
 export interface BusinessModelMatch {
   id: string;
@@ -122,4 +122,4 @@ export class BusinessModelService {
 export const businessModelService = BusinessModelService.getInstance();
 
 // Backward compatibility exports
-export { calculateAllBusinessModelMatches } from "./advancedScoringAlgorithm";
+export { calculateAllBusinessModelMatches } from "../../../shared/scoring";

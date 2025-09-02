@@ -1,3 +1,4 @@
+import React, { useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import BizModelAILogo from "./BizModelAILogo";
 import {
@@ -9,24 +10,40 @@ import {
 
 function Footer() {
   const navigate = useNavigate();
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   const handleContactUsClick = (e: React.MouseEvent) => {
     e.preventDefault();
     navigate("/contact");
     // Scroll to top after navigation
-    setTimeout(() => {
+    const contactTimeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
+    timeouts.current.add(contactTimeout);
   };
 
   const handlePrivacyPolicyClick = (e: React.MouseEvent) => {
     e.preventDefault();
     navigate("/privacy");
     // Scroll to top after navigation
-    setTimeout(() => {
+    const privacyTimeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
+    timeouts.current.add(privacyTimeout);
   };
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

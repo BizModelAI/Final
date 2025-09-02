@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Download, ArrowLeft, AlertCircle } from "lucide-react";
 import BusinessReportContent from "../components/BusinessReportContent";
-import { QuizData, AIAnalysis, BusinessPath } from "../types";
+import { QuizData, BusinessPath } from "../types";
 import { AIService } from "../utils/aiService";
 import { AICacheManager } from "../utils/aiCacheManager";
 import { businessPaths } from "../data/businessPaths";

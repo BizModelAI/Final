@@ -186,3 +186,17 @@ export class ReportViewManager {
 }
 
 export const reportViewManager = ReportViewManager.getInstance();
+
+// Add btoa to window object for base64 encoding
+declare global {
+  interface Window {
+    btoa: (str: string) => string;
+  }
+}
+
+// Polyfill btoa if not available
+if (typeof window !== 'undefined' && !window.btoa) {
+  window.btoa = function(str: string) {
+    return Buffer.from(str, 'binary').toString('base64');
+  };
+}

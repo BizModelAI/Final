@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -6,8 +6,6 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { PaywallProvider } from "./contexts/PaywallContext";
 import {
@@ -22,6 +20,7 @@ import "./utils/debugOpenAI";
 import "./utils/debugAIContent";
 import "./utils/clearAllCaches";
 import "./utils/debugBusinessModels";
+import { quizDataRetryManager } from './utils/quizDataRetry';
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
@@ -38,8 +37,6 @@ import Results from "./components/Results";
 import CongratulationsGuest from "./components/CongratulationsGuest";
 import BusinessModelDetail from "./components/BusinessModelDetail";
 import { AICacheManager } from "./utils/aiCacheManager";
-import { businessModelService } from "./utils/businessModelService";
-import { AIService } from "./utils/aiService";
 import BusinessGuide from "./components/BusinessGuide";
 import DownloadReportPage from "./pages/DownloadReportPage";
 import PDFReportPage from "./pages/PDFReportPage";
@@ -70,6 +67,9 @@ function MainAppContent() {
   const [loadedReportData, setLoadedReportData] = React.useState<any>(null);
   const [showCongratulations, setShowCongratulations] = React.useState(false);
   const [dataExpired, setDataExpired] = React.useState(false);
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Set user email from auth context if available
   React.useEffect(() => {
@@ -174,6 +174,17 @@ function MainAppContent() {
       }
     }
   }, [location?.pathname, location?.search]);
+
+  // Comprehensive cleanup effect to prevent memory leaks
+  React.useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
 
   // Ensure quiz data persists even if React state gets reset
   React.useEffect(() => {
@@ -393,6 +404,7 @@ function MainAppContent() {
         showCongratulations={showCongratulations}
         setShowCongratulations={setShowCongratulations}
         handleAILoadingComplete={handleAILoadingComplete}
+        timeouts={timeouts}
       />
     );
   }
@@ -594,6 +606,7 @@ const QuizWithNavigation: React.FC<{
   showCongratulations: boolean;
   setShowCongratulations: (show: boolean) => void;
   handleAILoadingComplete: (data: any) => void;
+  timeouts: React.RefObject<Set<NodeJS.Timeout>>;
 }> = ({
   quizData,
   setQuizData,
@@ -609,6 +622,7 @@ const QuizWithNavigation: React.FC<{
   showCongratulations,
   setShowCongratulations,
   handleAILoadingComplete,
+  timeouts,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -623,48 +637,80 @@ const QuizWithNavigation: React.FC<{
     try {
       // TIER 1 & 2: For authenticated users (both paid and temporary), save to database
       if (user) {
-        // Use the legacy endpoint for authenticated users to maintain compatibility
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/api/auth/save-quiz-data", true);
-        xhr.withCredentials = true;
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        const response = await new Promise<{
-          ok: boolean;
-          status: number;
-          statusText: string;
-          text: string;
-        }>((resolve, reject) => {
-          xhr.onload = () => {
-            resolve({
-              ok: xhr.status >= 200 && xhr.status < 300,
-              status: xhr.status,
-              statusText: xhr.statusText,
-              text: xhr.responseText,
-            });
-          };
-          xhr.onerror = () => reject(new Error("XMLHttpRequest network error"));
-          xhr.ontimeout = () => reject(new Error("XMLHttpRequest timeout"));
-          xhr.timeout = 10000; // 10 second timeout
-          xhr.send(JSON.stringify({ quizData: data }));
-        });
-
-        if (response.ok) {
-          const responseData = JSON.parse(response.text);
-          if (responseData.quizAttemptId) {
-            localStorage.setItem(
-              "currentQuizAttemptId",
-              responseData.quizAttemptId.toString(),
-            );
+        let saveSuccessful = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (!saveSuccessful && retryCount < maxRetries) {
+          try {
+            console.log(`Attempting to save quiz data for authenticated user (attempt ${retryCount + 1}/${maxRetries})`);
             
+            const response = await fetch("/api/auth/save-quiz-data", {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ quizData: data }),
+            });
 
+            if (response.ok) {
+              const responseData = await response.json();
+              console.log("✅ Quiz data saved successfully:", responseData);
+              
+              if (responseData.quizAttemptId) {
+                localStorage.setItem(
+                  "currentQuizAttemptId",
+                  responseData.quizAttemptId.toString(),
+                );
+                console.log(`Quiz attempt ID ${responseData.quizAttemptId} stored in localStorage`);
+              }
+              
+              saveSuccessful = true;
+            } else {
+              const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+              console.error(
+                `❌ Failed to save quiz data (attempt ${retryCount + 1}):`,
+                response.status,
+                response.statusText,
+                errorData
+              );
+              
+              // Don't retry for authentication errors (401) or client errors (4xx)
+              if (response.status >= 400 && response.status < 500) {
+                console.error("Client error encountered, skipping retries");
+                break;
+              }
+              
+              retryCount++;
+              if (retryCount < maxRetries) {
+                console.log(`Retrying in ${retryCount * 1000}ms...`);
+                await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Network error saving quiz data (attempt ${retryCount + 1}):`, error);
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+              console.log(`Retrying in ${retryCount * 1000}ms...`);
+              await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+            }
           }
+        }
+        
+        // If all retries failed, store locally as backup and add to retry queue
+        if (!saveSuccessful) {
+          console.warn("⚠️ Failed to save quiz data to server after all retries, storing locally as backup");
+          localStorage.setItem("quizData", JSON.stringify(data));
+          localStorage.setItem("quizDataTimestamp", Date.now().toString());
+          localStorage.setItem("quizDataSaveRetryNeeded", "true");
+          
+          // Add to retry queue for later attempts
+          quizDataRetryManager.addToRetryQueue(data);
         } else {
-          console.error(
-            "Failed to save quiz data:",
-            response.status,
-            response.statusText,
-          );
+          // Clear retry flag if save was successful
+          localStorage.removeItem("quizDataSaveRetryNeeded");
         }
       }
       // TIER 2: User has provided email but not authenticated - will be handled by EmailCapture component
@@ -735,9 +781,10 @@ const QuizWithNavigation: React.FC<{
       );
     }
 
-    setTimeout(() => {
+    const navigateTimeout = setTimeout(() => {
       navigate("/results");
     }, 100);
+    timeouts.current.add(navigateTimeout);
   };
 
   const handleReturnToQuiz = () => {
@@ -847,6 +894,41 @@ const ResultsWrapperWithReset: React.FC<{
   const [isFetchingFallback, setIsFetchingFallback] = React.useState(false);
   const [fallbackQuizData, setFallbackQuizData] = React.useState<QuizData | null>(null);
 
+  // Always call hooks at the top level
+  React.useEffect(() => {
+    const fetchQuizData = async () => {
+      if (isFetchingFallback) return; // Prevent multiple simultaneous requests
+      
+      try {
+        setIsFetchingFallback(true);
+        console.log("Attempting to fetch quiz data from API as fallback...");
+        const response = await fetch("/api/auth/latest-quiz-data", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fallback API response:", data);
+          if (data.quizData) {
+            console.log("Found quiz data via API, storing in localStorage and state");
+            localStorage.setItem("quizData", JSON.stringify(data.quizData));
+            setFallbackQuizData(data.quizData); // This will trigger a re-render
+          }
+        } else {
+          console.log("API fallback failed:", response.status);
+        }
+      } catch (error) {
+        console.log("API fallback error:", error);
+      } finally {
+        setIsFetchingFallback(false);
+      }
+    };
+
+    // Only fetch if we don't have quiz data
+    if (!quizData && !fallbackQuizData) {
+      fetchQuizData();
+    }
+  }, [quizData, fallbackQuizData, isFetchingFallback]);
+
   // Check localStorage if no quiz data is provided via props
   const savedQuizData = React.useMemo(() => {
     console.log("ResultsWrapper - checking quiz data...");
@@ -927,38 +1009,6 @@ const ResultsWrapperWithReset: React.FC<{
       localStorage.getItem("currentQuizAttemptId"),
     );
 
-    // Try to get quiz data from the API as a last resort
-    React.useEffect(() => {
-      const fetchQuizData = async () => {
-        if (isFetchingFallback) return; // Prevent multiple simultaneous requests
-        
-        try {
-          setIsFetchingFallback(true);
-          console.log("Attempting to fetch quiz data from API as fallback...");
-          const response = await fetch("/api/auth/latest-quiz-data", {
-            credentials: "include",
-          });
-          if (response.ok) {
-            const data = await response.json();
-            console.log("Fallback API response:", data);
-            if (data.quizData) {
-              console.log("Found quiz data via API, storing in localStorage and state");
-              localStorage.setItem("quizData", JSON.stringify(data.quizData));
-              setFallbackQuizData(data.quizData); // This will trigger a re-render
-            }
-          } else {
-            console.log("API fallback failed:", response.status);
-          }
-        } catch (error) {
-          console.log("API fallback error:", error);
-        } finally {
-          setIsFetchingFallback(false);
-        }
-      };
-
-      fetchQuizData();
-    }, [isFetchingFallback]);
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-center p-8">
@@ -983,8 +1033,6 @@ function App() {
           <BusinessModelScoresProvider>
             <Router>
               <NavigationGuardWrapper>
-                <Analytics />
-                <SpeedInsights />
                 <Routes>
                   {/* Public routes with layout */}
                   <Route
@@ -1140,3 +1188,11 @@ function App() {
 }
 
 export default App;
+
+// Add missing browser globals
+declare global {
+  interface Window {
+    URLSearchParams: typeof URLSearchParams;
+    XMLHttpRequest: typeof XMLHttpRequest;
+  }
+}

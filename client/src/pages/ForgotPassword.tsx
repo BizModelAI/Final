@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, AlertCircle, CheckCircle, X } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle, X } from "lucide-react";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");

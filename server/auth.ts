@@ -1,5 +1,5 @@
 import express from "express";
-import { storage } from "./storage.js";
+import { storage } from "./storage";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 
@@ -14,10 +14,10 @@ const tempSessionCache = new Map<
 >();
 
 // Periodic cleanup to prevent memory leaks in session cache
-const SESSION_CLEANUP_INTERVAL = 15 * 60 * 1000; // Clean up every 15 minutes
+const SESSION_CLEANUP_INTERVAL = 60 * 60 * 1000; // Clean up every 1 hour (was 15 minutes)
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 
-setInterval(() => {
+const sessionCleanupInterval = setInterval(() => {
   const now = Date.now();
   let cleanedCount = 0;
 
@@ -36,12 +36,30 @@ setInterval(() => {
   }
 }, SESSION_CLEANUP_INTERVAL);
 
+// Cleanup function to prevent memory leaks
+const cleanup = () => {
+  if (sessionCleanupInterval) {
+    clearInterval(sessionCleanupInterval);
+  }
+};
+
+// Clean up on process exit
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+process.on('exit', cleanup);
+
 // Helper function to get session key from request
 export function getSessionKey(req: any): string {
-  // Use a combination of IP and User-Agent as session key
+  // First try to use the session ID if available
+  if (req.sessionID) {
+    return req.sessionID;
+  }
+  
+  // Fallback to a combination of IP and User-Agent for anonymous users
   const ip = req.ip || req.connection.remoteAddress || "unknown";
   const userAgent = req.headers["user-agent"] || "unknown";
-  return `${ip}-${userAgent}`;
+  const hashedKey = require('crypto').createHash('md5').update(`${ip}-${userAgent}`).digest('hex');
+  return `anon_${hashedKey}`;
 }
 
 // Helper function to get user from session or cache
@@ -116,32 +134,22 @@ export function setUserIdInRequestAndSave(req: any, userId: number): Promise<voi
 // Session types are now declared in server/types.d.ts
 
 export function setupAuthRoutes(app: Express) {
-  // Add this middleware at the top of setupAuthRoutes
-  app.use((req: Request, res: Response, next: express.NextFunction) => {
-    if (req.path.startsWith("/api/auth/")) {
-      res.header("Access-Control-Allow-Origin", "http://localhost:9000");
-      res.header("Access-Control-Allow-Credentials", "true");
-      res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-      if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-      }
-    }
-    next();
-  });
+  // Global CORS middleware handles CORS for all routes including auth
+  // No need for route-level CORS headers
 
   // Add this middleware at the top of setupAuthRoutes, after CORS middleware
   app.use((req: Request, res: Response, next: express.NextFunction) => {
     if (req.path.startsWith("/api/auth/")) {
-      console.log("[SESSION DEBUG] Incoming /api/auth/* request", {
-        path: req.path,
-        method: req.method,
-        cookies: req.headers.cookie,
-        sessionId: req.sessionID,
-        sessionUserId: req.session?.userId,
-        sessionExists: !!req.session,
-        userAgent: req.headers["user-agent"]?.substring(0, 50),
-      });
+      // DEBUG: Removed for production
+      // console.log("Incoming /api/auth/* request", {
+      //   path: req.path,
+      //   method: req.method,
+      //   cookies: req.headers.cookie,
+      //   sessionId: req.sessionID,
+      //   sessionUserId: req.session?.userId,
+      //   sessionExists: !!req.session,
+      //   userAgent: req.headers["user-agent"]?.substring(0, 50),
+      // });
     }
     next();
   });
@@ -468,7 +476,6 @@ export function setupAuthRoutes(app: Express) {
           password: hashedPassword,
           firstName,
           lastName,
-          quizData,
         });
       } catch (storageError) {
         console.error("Storage error:", storageError);
@@ -671,7 +678,7 @@ export function setupAuthRoutes(app: Express) {
 
       // Send email with reset link
       try {
-        const { emailService } = await import("./services/emailService.js");
+        const { emailService } = await import("./services/emailService");
         const baseUrl = req.get("host")?.includes("localhost")
           ? `${req.protocol}://${req.get("host")}`
           : "https://bizmodelai.com";
@@ -882,7 +889,7 @@ export function setupAuthRoutes(app: Express) {
 
       console.log(`New contact form submission from: ${email}`);
 
-      const { emailService } = await import("./services/emailService.js");
+      const { emailService } = await import("./services/emailService");
 
       // Send notification to team@bizmodelai.com
       let notificationSent = false;
@@ -954,6 +961,64 @@ export function setupAuthRoutes(app: Express) {
     } catch (error) {
       console.error("Error in /api/contact:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Save quiz data endpoint for authenticated users
+  app.post("/api/auth/save-quiz-data", async (req: Request, res: Response) => {
+    try {
+      const userId = getUserIdFromRequest(req);
+
+      if (!userId) {
+        console.log("Save quiz data: Not authenticated");
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { quizData } = req.body;
+
+      if (!quizData) {
+        console.log("Save quiz data: Missing quiz data");
+        return res.status(400).json({ error: "Quiz data is required" });
+      }
+
+      console.log(`Saving quiz data for authenticated user ${userId}`);
+
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.log(`Save quiz data: User ${userId} not found`);
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Create quiz attempt for authenticated user using centralized method
+      const attempt = await storage.createQuizAttemptWithAccess({
+        userId: userId,
+        quizData: quizData,
+        isPaid: user.isPaid || false,
+      });
+
+      console.log(`Quiz attempt ${attempt.id} created for authenticated user ${userId}`);
+
+      // Return success response with quiz attempt ID
+      res.json({
+        success: true,
+        message: "Quiz data saved successfully",
+        quizAttemptId: attempt.id,
+        userId: userId,
+        isPaidUser: user.isPaid || false,
+        attemptDetails: {
+          id: attempt.id,
+          completedAt: attempt.completedAt,
+          isPaid: attempt.isPaid,
+        }
+      });
+
+    } catch (error) {
+      console.error("Error in /api/auth/save-quiz-data:", error);
+      res.status(500).json({ 
+        error: "Failed to save quiz data",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 }

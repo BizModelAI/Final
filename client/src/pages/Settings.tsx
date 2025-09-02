@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 import {
   User,
-  Mail,
   Save,
   AlertCircle,
   CheckCircle,
@@ -50,6 +49,9 @@ const Settings: React.FC = () => {
   });
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  
+  // Refs to store timeout IDs for cleanup
+  const timeouts = useRef<Set<NodeJS.Timeout>>(new Set());
 
   // Sync form data when user data changes
   useEffect(() => {
@@ -73,6 +75,17 @@ const Settings: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Comprehensive cleanup effect to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Clear all timeouts
+      timeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      timeouts.current.clear();
+    };
+  }, []);
+
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "notifications", label: "Notifications", icon: Bell },
@@ -84,7 +97,8 @@ const Settings: React.FC = () => {
     if (!user) {
       setSaveStatus("error");
       console.error("Settings: Cannot save - user not authenticated");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const errorTimeout = setTimeout(() => setSaveStatus("idle"), 3000);
+      timeouts.current.add(errorTimeout);
       return;
     }
 
@@ -96,7 +110,8 @@ const Settings: React.FC = () => {
     ) {
       setSaveStatus("error");
       console.error("Settings: At least one field must be provided");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const validationTimeout = setTimeout(() => setSaveStatus("idle"), 3000);
+      timeouts.current.add(validationTimeout);
       return;
     }
 
@@ -120,21 +135,25 @@ const Settings: React.FC = () => {
       await updateProfile(serverData);
       console.log("Settings: Profile saved successfully");
       setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const successTimeout = setTimeout(() => setSaveStatus("idle"), 3000);
+      timeouts.current.add(successTimeout);
     } catch (error) {
       console.error("Settings: Profile save error:", error);
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const errorTimeout2 = setTimeout(() => setSaveStatus("idle"), 3000);
+      timeouts.current.add(errorTimeout2);
     }
   };
 
   const handleNotificationSave = () => {
     setSaveStatus("saving");
     // Simulate API call
-    setTimeout(() => {
+    const apiTimeout = setTimeout(() => {
       setSaveStatus("success");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      const idleTimeout = setTimeout(() => setSaveStatus("idle"), 3000);
+      timeouts.current.add(idleTimeout);
     }, 1000);
+    timeouts.current.add(apiTimeout);
   };
 
   const handlePasswordChange = async () => {

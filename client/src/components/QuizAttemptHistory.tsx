@@ -1,12 +1,8 @@
 import React from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import {
-  Clock,
   Calendar,
-  TrendingUp,
-  Eye,
   ChevronRight,
-  CheckCircle2,
   Loader2,
 } from "lucide-react";
 import { format } from "date-fns";

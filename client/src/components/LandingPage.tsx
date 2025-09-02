@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, TrendingUp, Clock, Target, ArrowRight, CheckCircle, Zap, Users, Award, Star, Lightbulb } from 'lucide-react';
+import { Brain, TrendingUp, Clock, Target, ArrowRight, CheckCircle, Zap, Users, Award, Star } from 'lucide-react';
 import BizModelAILogo from './BizModelAILogo';
 
 interface LandingPageProps {

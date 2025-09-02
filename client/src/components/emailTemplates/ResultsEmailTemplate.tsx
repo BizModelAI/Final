@@ -1,7 +1,7 @@
 import React from "react";
-import { businessPaths } from "../../../shared/businessPaths.js";
+import { businessPaths } from "../../../../shared/businessPaths";
 
-function getTopBusinessPaths(quizData) {
+function getTopBusinessPaths(quizData: any) {
     // Placeholder: return first 3 business paths
     return businessPaths.slice(0, 3);
 }
@@ -17,7 +17,7 @@ const socials = [
     { href: "https://www.pinterest.com/bizmodelai/", icon: "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/pinterest.svg", alt: "Pinterest" },
 ];
 
-function getPersonalizedSnapshot(quizData) {
+function getPersonalizedSnapshot(quizData: any) {
     if (!quizData) return [
         '• Prefer flexibility with structure',
         '• Thrive on independent projects',
@@ -78,7 +78,7 @@ function getPersonalizedSnapshot(quizData) {
     return lines.slice(0, 6);
 }
 
-const ResultsEmailTemplate = ({ quizData, userEmail, isPaid }) => {
+const ResultsEmailTemplate = ({ quizData, userEmail, isPaid }: { quizData: any; userEmail: any; isPaid: any }) => {
     const topPaths = getTopBusinessPaths(quizData);
     const snapshotLines = getPersonalizedSnapshot(quizData);
     return (
@@ -119,7 +119,7 @@ const ResultsEmailTemplate = ({ quizData, userEmail, isPaid }) => {
                                 <div style={{ marginBottom: 16 }}>
                                     <div style={{ fontWeight: 700, color: '#6366f1', fontSize: 16, marginBottom: 6 }}>Top Benefits</div>
                                     <ul style={{ color: '#334155', fontSize: 15, margin: 0, padding: '0 0 0 18px', lineHeight: 1.7, listStyle: 'disc' }}>
-                                        {pros.map((pro, i) => (
+                                        {pros.map((pro: any, i: number) => (
                                             <li key={i} style={{ marginBottom: 6 }}>{pro}</li>
                                         ))}
                                     </ul>

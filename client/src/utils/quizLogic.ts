@@ -1,7 +1,4 @@
 import { QuizData, BusinessPath } from "../types";
-import { businessPaths } from "../data/businessPaths";
-import { apiPost } from "./apiClient";
-import { businessModelService } from './businessModelService';
 
 // Use relative path for API_BASE
 const API_BASE = "";

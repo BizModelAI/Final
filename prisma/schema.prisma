@@ -19,7 +19,6 @@ model User {
   isTemporary         Boolean              @default(false) @map("is_temporary")
   isUnsubscribed      Boolean              @default(false) @map("is_unsubscribed")
   sessionId           String?              @map("session_id")
-  tempQuizData        Json?                @map("temp_quiz_data")
   updatedAt           DateTime             @default(now()) @map("updated_at")
   passwordResetTokens PasswordResetToken[]
   payments            Payment[]
@@ -27,25 +26,33 @@ model User {
   refundsProcessed    Refund[]             @relation("RefundAdminUser")
   reportViews         ReportView[]
 
+  @@index([isPaid], map: "idx_user_paid")
+  @@index([isTemporary], map: "idx_user_temporary")
+  @@index([expiresAt], map: "idx_user_expires")
+  @@index([sessionId], map: "idx_user_session")
   @@map("users")
 }
 
 model QuizAttempt {
-  id          Int          @id @default(autoincrement())
-  userId      Int?         @map("user_id")
-  sessionId   String?      @map("session_id")
-  quizData    Json         @map("quiz_data")
-  aiContent   Json?        @map("ai_content")
-  isPaid      Boolean      @default(false) @map("is_paid")
-  completedAt DateTime     @default(now()) @map("completed_at")
-  expiresAt   DateTime?    @map("expires_at")
-  aiContents  AiContent[]
-  payments    Payment[]
-  user        User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reportViews ReportView[]
-  // ESSENTIAL: Store business model scores (calculated once, used everywhere)
-  businessModelScores BusinessModelScores?
+  id           Int            @id @default(autoincrement())
+  userId       Int?           @map("user_id")
+  sessionId    String?        @map("session_id")
+  quizData     Json           @map("quiz_data")
+  isPaid       Boolean        @default(false) @map("is_paid")
+  completedAt  DateTime       @default(now()) @map("completed_at")
+  expiresAt    DateTime?      @map("expires_at")
+  aiContents   AiContent[]
+  payments     Payment[]
+  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportAccess ReportAccess[]
+  reportViews  ReportView[]
+  businessModelScores BusinessModelScores[] // Add this relation
 
+  @@index([userId], map: "idx_quiz_attempt_user")
+  @@index([sessionId], map: "idx_quiz_attempt_session")
+  @@index([isPaid], map: "idx_quiz_attempt_paid")
+  @@index([expiresAt], map: "idx_quiz_attempt_expires")
+  @@index([completedAt], map: "idx_quiz_attempt_completed")
   @@map("quiz_attempts")
 }
 
@@ -60,20 +67,28 @@ model AiContent {
   quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
 
   @@unique([quizAttemptId, contentType])
+  @@index([contentType], map: "idx_ai_content_type")
+  @@index([generatedAt], map: "idx_ai_content_generated")
+  @@index([contentHash], map: "idx_ai_content_hash")
   @@map("ai_content")
 }
 
-// ESSENTIAL: Store business model scores (calculated once, used everywhere)
-model BusinessModelScores {
+model ReportAccess {
   id            Int         @id @default(autoincrement())
-  quizAttemptId Int         @unique @map("quiz_attempt_id") // One score set per quiz attempt
-  scores        Json        // Array of {id, name, score, category}
-  topMatches    Json        // Top 3 business models with scores
-  overallFitScore Float     @map("overall_fit_score") // Highest score
-  calculatedAt  DateTime    @default(now()) @map("calculated_at")
+  quizAttemptId Int         @map("quiz_attempt_id")
+  reportType    String      @map("report_type")
+  isUnlocked    Boolean     @default(false) @map("is_unlocked")
+  unlockedAt    DateTime?   @map("unlocked_at")
+  unlockedBy    String?     @map("unlocked_by")
+  expiresAt     DateTime?   @map("expires_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
   quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
 
-  @@map("business_model_scores")
+  @@unique([quizAttemptId, reportType])
+  @@index([isUnlocked], map: "idx_report_access_unlocked")
+  @@index([reportType], map: "idx_report_access_type")
+  @@index([expiresAt], map: "idx_report_access_expires")
+  @@map("report_access")
 }
 
 model Payment {
@@ -97,6 +112,10 @@ model Payment {
   @@index([userId], map: "idx_payment_user")
   @@index([stripePaymentIntentId], map: "idx_payment_stripe")
   @@index([paypalOrderId], map: "idx_payment_paypal")
+  @@index([type], map: "idx_payment_type")
+  @@index([createdAt], map: "idx_payment_created")
+  @@index([completedAt], map: "idx_payment_completed")
+  @@index([quizAttemptId], map: "idx_payment_quiz_attempt")
   @@map("payments")
 }
 
@@ -116,6 +135,10 @@ model Refund {
   adminUser      User?     @relation("RefundAdminUser", fields: [adminUserId], references: [id])
   payment        Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
+  @@index([paymentId], map: "idx_refund_payment")
+  @@index([status], map: "idx_refund_status")
+  @@index([createdAt], map: "idx_refund_created")
+  @@index([adminUserId], map: "idx_refund_admin")
   @@map("refunds")
 }
 
@@ -128,6 +151,10 @@ model ReportView {
   quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
   user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId], map: "idx_report_view_user")
+  @@index([sessionId], map: "idx_report_view_session")
+  @@index([quizAttemptId], map: "idx_report_view_quiz_attempt")
+  @@index([viewedAt], map: "idx_report_view_viewed")
   @@map("report_views")
 }
 
@@ -148,4 +175,24 @@ model sessions {
   expire DateTime @db.Timestamp(6)
 
   @@index([expire], map: "IDX_session_expire")
+}
+
+// New table to store calculated business model scores
+model BusinessModelScores {
+  id            Int         @id @default(autoincrement())
+  quizAttemptId Int         @map("quiz_attempt_id")
+  businessModelId String    @map("business_model_id")
+  businessModelName String  @map("business_model_name")
+  score         Int         // Score as percentage (0-100)
+  category      String      // "Best Fit", "Strong Fit", "Possible Fit", "Poor Fit"
+  fitScore      Int         // For backward compatibility
+  calculatedAt  DateTime    @default(now()) @map("calculated_at")
+  quizAttempt   QuizAttempt @relation(fields: [quizAttemptId], references: [id], onDelete: Cascade)
+
+  @@unique([quizAttemptId, businessModelId])
+  @@index([quizAttemptId], map: "idx_business_model_scores_attempt")
+  @@index([businessModelId], map: "idx_business_model_scores_model")
+  @@index([score], map: "idx_business_model_scores_score")
+  @@index([category], map: "idx_business_model_scores_category")
+  @@map("business_model_scores")
 }
