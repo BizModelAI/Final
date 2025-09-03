@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes.js";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -75,13 +76,34 @@ app.use(session({
     
     if (process.env.NODE_ENV === "production") {
       // Serve static files from the client build directory
-      const clientDistPath = path.join(__dirname, "../../client/dist");
-      app.use(express.static(clientDistPath) as any);
+      // Try multiple possible paths for different deployment environments
+      const possiblePaths = [
+        path.join(__dirname, "../../client/dist"),
+        path.join(__dirname, "../client/dist"),
+        path.join(process.cwd(), "client/dist"),
+        path.join(process.cwd(), "../client/dist")
+      ];
       
-      // Catch all handler for SPA routing
-      app.get('*', (req: Request, res: Response) => {
-        res.sendFile(path.join(clientDistPath, 'index.html'));
-      });
+      let clientDistPath = null;
+      for (const testPath of possiblePaths) {
+        if (fs.existsSync(testPath)) {
+          clientDistPath = testPath;
+          break;
+        }
+      }
+      
+      if (clientDistPath) {
+        console.log(`📁 Serving static files from: ${clientDistPath}`);
+        app.use(express.static(clientDistPath) as any);
+        
+        // Catch all handler for SPA routing
+        app.get('*', (req: Request, res: Response) => {
+          res.sendFile(path.join(clientDistPath, 'index.html'));
+        });
+      } else {
+        console.error("❌ Could not find client/dist directory");
+        console.error("Tried paths:", possiblePaths);
+      }
     }
     
     app.listen(Number(port), '0.0.0.0', () => {
