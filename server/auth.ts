@@ -1,5 +1,5 @@
 import express from "express";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
 

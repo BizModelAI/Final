@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from "express";
 import type { Request, Response, NextFunction } from "express-serve-static-core";
 import session from "express-session";
-import { registerRoutes } from "./routes";
+import { registerRoutes } from "./routes.js";
 import path from "path";
 
 const app = express();

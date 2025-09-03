@@ -1,5 +1,5 @@
 import { prisma } from '../db';
-import { centralizedScoringService } from './centralizedScoringService';
+import { centralizedScoringService } from './centralizedScoringService.js';
 
 export interface BusinessModelScore {
   id: string;

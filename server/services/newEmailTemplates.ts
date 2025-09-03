@@ -1,5 +1,5 @@
 import { businessPaths } from '../../shared/businessPaths';
-import { centralizedScoringService } from './centralizedScoringService';
+import { centralizedScoringService } from './centralizedScoringService.js';
 
 // Import client business models for consistency
 import { businessModels as clientBusinessModels } from '../../client/src/data/businessModels';

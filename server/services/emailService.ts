@@ -1,11 +1,11 @@
 import type { QuizData } from "../../shared/types";
 import { Resend } from "resend";
 import { PrismaClient } from '@prisma/client';
-import { centralizedScoringService } from "./centralizedScoringService";
+import { centralizedScoringService } from "./centralizedScoringService.js";
 
 const prisma = new PrismaClient();
 import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils";
-import { generatePreviewEmailHTML, generatePaidEmailHTML } from "./newEmailTemplates";
+import { generatePreviewEmailHTML, generatePaidEmailHTML } from "./newEmailTemplates.js";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)

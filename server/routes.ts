@@ -3,14 +3,14 @@ import express from "express";
 type Express = express.Express;
 type Request = express.Request;
 type Response = express.Response;
-import { storage } from './storage';
-import { getUserIdFromRequest, getSessionKey, setupAuthRoutes } from "./auth";
-import { requireAdminAuth } from "./middleware/adminAuth";
-import { pdfService } from "./services/pdfService";
-import { emailService } from "./services/emailService";
-import { aiScoringService } from "./services/aiScoringService";
-import { ReportAccessService } from "./services/reportAccessService";
-import { db } from "./db";
+import { storage } from './storage.js';
+import { getUserIdFromRequest, getSessionKey, setupAuthRoutes } from "./auth.js";
+import { requireAdminAuth } from "./middleware/adminAuth.js";
+import { pdfService } from "./services/pdfService.js";
+import { emailService } from "./services/emailService.js";
+import { aiScoringService } from "./services/aiScoringService.js";
+import { ReportAccessService } from "./services/reportAccessService.js";
+import { db } from "./db.js";
 import Stripe from "stripe";
 import {
   Client,
