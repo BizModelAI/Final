@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx --watch server/index.ts",
     "build": "cd client && npm run build && cd .. && npm run build:server",
-    "build:server": "tsc -p server/tsconfig.server.json",
+    "build:server": "npx prisma generate && tsc -p server/tsconfig.server.json",
     "start": "NODE_ENV=production node server/dist/server/index.js",
     "check": "tsc",
     "cleanup-expired-data": "tsx scripts/cleanup-expired-data.js",
