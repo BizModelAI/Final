@@ -227,29 +227,7 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
     return true;
   };
 
-  // Helper to ensure quizAttemptId is set before payment
-  const ensureQuizAttemptId = async (email: string) => {
-    const quizData = localStorage.getItem("quizData");
-    const parsedQuizData = quizData ? JSON.parse(quizData) : {};
-    let quizAttemptId;
-    try {
-      const saveResponse = await fetch("/api/save-quiz-data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quizData: parsedQuizData, email }),
-      });
-      if (saveResponse.ok) {
-        const saveData = await saveResponse.json();
-        if (saveData.quizAttemptId != null) {
-          quizAttemptId = saveData.quizAttemptId;
-          localStorage.setItem("currentQuizAttemptId", String(quizAttemptId));
-        }
-      }
-    } catch (saveErr) {
-      console.error("Error saving quiz data before payment:", saveErr);
-    }
-    return quizAttemptId;
-  };
+
 
   const handleAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,27 +254,8 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
         parsedQuizData,
       );
 
-      // Check if quiz data already exists before saving
-      let quizAttemptId = localStorage.getItem("currentQuizAttemptId");
-      
-      if (!quizAttemptId) {
-        try {
-          const saveResponse = await fetch("/api/save-quiz-data", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ quizData: parsedQuizData, email: formData.email }),
-          });
-          if (saveResponse.ok) {
-            const saveData = await saveResponse.json();
-            if (saveData.quizAttemptId != null) {
-              quizAttemptId = saveData.quizAttemptId;
-              localStorage.setItem("currentQuizAttemptId", String(quizAttemptId));
-            }
-          }
-        } catch (saveErr) {
-          console.error("Error saving quiz data after signup:", saveErr);
-        }
-      }
+      // Quiz data is now handled during signup, so we just need to get the quiz attempt ID
+      const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
 
       console.log("PaymentAccountModal: Signup and quiz save successful, moving to payment");
       
@@ -454,7 +413,7 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
         const quizData = JSON.parse(savedQuizData);
         console.log("PaymentAccountModal: Saving quiz data after successful payment");
         
-        const response = await fetch("/api/save-quiz-data", {
+        const response = await fetch("/api/auth/save-quiz-data", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

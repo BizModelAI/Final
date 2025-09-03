@@ -223,17 +223,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signup = async (email: string, password: string, firstName: string, lastName: string): Promise<{ success: boolean; error?: string }> => {
+  const signup = async (email: string, password: string, firstName: string, lastName: string, quizData?: any): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await apiPost(API_ROUTES.AUTH_SIGNUP, {
         email,
         password,
         firstName,
         lastName,
+        quizData,
       });
       // The backend returns user data directly, not wrapped in a user object
       setUser(response);
       setIsAuthenticated(true);
+      
+      // Store quiz attempt ID if provided
+      if (response.quizAttemptId) {
+        localStorage.setItem("currentQuizAttemptId", response.quizAttemptId.toString());
+        console.log(`Quiz attempt ID ${response.quizAttemptId} stored after signup`);
+      }
+      
       return { success: true };
     } catch (error: any) {
       console.error("Signup error:", error);

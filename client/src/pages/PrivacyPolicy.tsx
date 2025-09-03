@@ -203,7 +203,6 @@ const PrivacyPolicy: React.FC = () => {
             </Link>
             <div className="flex space-x-6 text-sm text-gray-500">
               <Link to="/contact#top" className="hover:text-gray-700">Contact Us</Link>
-              <Link to="/terms" className="hover:text-gray-700">Terms of Service</Link>
             </div>
           </div>
         </div>

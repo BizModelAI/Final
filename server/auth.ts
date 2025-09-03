@@ -369,7 +369,7 @@ export function setupAuthRoutes(app: express.Express) {
         return res.status(400).json({ error: "Invalid request body" });
       }
 
-      const { email, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName, quizData } = req.body;
 
       if (!email || !password || !firstName || !lastName) {
         console.log("Signup validation failed: missing required fields");
@@ -437,7 +437,7 @@ export function setupAuthRoutes(app: express.Express) {
       console.log("Generated sessionId:", sessionId);
 
       // Get quiz data from request or localStorage indication
-      const quizData = req.body.quizData || {};
+      const requestQuizData = req.body.quizData || {};
 
       console.log("Hashing password...");
       let hashedPassword;
@@ -457,6 +457,7 @@ export function setupAuthRoutes(app: express.Express) {
           password: hashedPassword,
           firstName,
           lastName,
+          quizData: requestQuizData,
         });
       } catch (storageError) {
         console.error("Storage error:", storageError);
@@ -476,6 +477,24 @@ export function setupAuthRoutes(app: express.Express) {
       // Get the actual user ID from storage
       const tempUser = await storage.getTemporaryUser(sessionId);
       if (tempUser) {
+        // Create quiz attempt if quiz data was provided
+        let quizAttemptId = null;
+        if (requestQuizData && Object.keys(requestQuizData).length > 0) {
+          try {
+            console.log("Creating quiz attempt for new user during signup");
+            const attempt = await storage.createQuizAttemptWithAccess({
+              userId: tempUser.id,
+              quizData: requestQuizData,
+              isPaid: false,
+            });
+            quizAttemptId = attempt.id;
+            console.log(`Quiz attempt ${quizAttemptId} created for new user ${tempUser.id}`);
+          } catch (quizError) {
+            console.error("Error creating quiz attempt during signup:", quizError);
+            // Continue anyway - the user can still proceed
+          }
+        }
+        
         // Establish session for the temporary user with the correct numeric ID
         setUserIdInRequest(req, tempUser.id);
         
@@ -493,6 +512,7 @@ export function setupAuthRoutes(app: express.Express) {
             firstName: firstName,
             lastName: lastName,
             isTemporary: true,
+            quizAttemptId: quizAttemptId,
           });
         });
       } else {
