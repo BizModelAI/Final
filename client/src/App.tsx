@@ -846,8 +846,8 @@ const QuizWithNavigation: React.FC<{
         onComplete={handleQuizComplete}
         onBack={() => window.history.back()}
         userId={
-          user && !String(user.id).startsWith("temp_")
-            ? parseInt(String(user.id))
+          user && !user.isTemporary
+            ? user.id
             : undefined
         }
       />

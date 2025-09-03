@@ -39,10 +39,10 @@ const SaveResultsPayment: React.FC = () => {
   const handlePaymentSuccess = async () => {
     try {
       // Clear business model AI content for new paid report
-      if (user && user.id && !String(user.id).startsWith("temp_")) {
+      if (user && user.id && !user.isTemporary) {
         try {
           const aiService = AIService.getInstance();
-          await aiService.clearBusinessModelAIContent(parseInt(String(user.id)));
+          await aiService.clearBusinessModelAIContent(user.id);
           console.log("🧹 Cleared business model AI content for new paid report");
         } catch (error) {
           console.error("Error clearing business model AI content:", error);

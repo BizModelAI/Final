@@ -369,7 +369,8 @@ export function setupAuthRoutes(app: express.Express) {
         return res.status(400).json({ error: "Invalid request body" });
       }
 
-      const { email, password, firstName, lastName, quizData } = req.body;
+      const { email, password, firstName, lastName, quizData = {} } = req.body;
+      console.log("Signup request body:", { email, firstName, lastName, hasQuizData: !!quizData, quizDataKeys: Object.keys(quizData) });
 
       if (!email || !password || !firstName || !lastName) {
         console.log("Signup validation failed: missing required fields");
@@ -436,8 +437,7 @@ export function setupAuthRoutes(app: express.Express) {
 
       console.log("Generated sessionId:", sessionId);
 
-      // Get quiz data from request or localStorage indication
-      const requestQuizData = req.body.quizData || {};
+
 
       console.log("Hashing password...");
       let hashedPassword;
@@ -457,7 +457,7 @@ export function setupAuthRoutes(app: express.Express) {
           password: hashedPassword,
           firstName,
           lastName,
-          quizData: requestQuizData,
+          quizData,
         });
       } catch (storageError) {
         console.error("Storage error:", storageError);
@@ -476,15 +476,17 @@ export function setupAuthRoutes(app: express.Express) {
       
       // Get the actual user ID from storage
       const tempUser = await storage.getTemporaryUser(sessionId);
+      console.log("Retrieved tempUser:", { tempUser, sessionId });
       if (tempUser) {
         // Create quiz attempt if quiz data was provided
         let quizAttemptId = null;
-        if (requestQuizData && Object.keys(requestQuizData).length > 0) {
+        console.log("Quiz data check:", { quizData, hasQuizData: quizData && Object.keys(quizData).length > 0 });
+        if (quizData && Object.keys(quizData).length > 0) {
           try {
-            console.log("Creating quiz attempt for new user during signup");
+            console.log("Creating quiz attempt for new user during signup with sessionId:", sessionId);
             const attempt = await storage.createQuizAttemptWithAccess({
-              userId: tempUser.id,
-              quizData: requestQuizData,
+              sessionId: sessionId,
+              quizData,
               isPaid: false,
             });
             quizAttemptId = attempt.id;
@@ -493,6 +495,8 @@ export function setupAuthRoutes(app: express.Express) {
             console.error("Error creating quiz attempt during signup:", quizError);
             // Continue anyway - the user can still proceed
           }
+        } else {
+          console.log("No quiz data provided or quiz data is empty, skipping quiz attempt creation");
         }
         
         // Establish session for the temporary user with the correct numeric ID
@@ -507,7 +511,7 @@ export function setupAuthRoutes(app: express.Express) {
           
       // Return a temporary user object for frontend
           res.json({
-            id: tempUser.id,
+            id: tempUser.id, // This is now a numeric database ID
             email: email,
             firstName: firstName,
             lastName: lastName,
@@ -516,14 +520,9 @@ export function setupAuthRoutes(app: express.Express) {
           });
         });
       } else {
-        // Fallback if user not found
-      res.json({
-        id: `temp_${sessionId}`,
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        isTemporary: true,
-      });
+        // Fallback if user not found - this should not happen in normal operation
+        console.error("Signup: User not found after creation, this indicates a serious issue");
+        return res.status(500).json({ error: "Account creation failed. Please try again." });
       }
     } catch (error) {
       console.error("Unexpected error in /api/auth/signup:", error);

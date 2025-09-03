@@ -247,7 +247,7 @@ const PayPalForm: React.FC<{
       let requestBody;
       if (user && user.id && !user.isTemporary) {
         requestBody = {
-          userId: parseInt(user.id),
+          userId: user.id, // Now always numeric
           quizAttemptId: quizAttemptId,
         };
       } else {
@@ -379,7 +379,7 @@ const PaymentForm: React.FC<EnhancedPaymentFormProps> = ({
         if (user && user.id && !user.isTemporary) {
           // Authenticated user
           requestBody = {
-            userId: parseInt(user.id),
+            userId: user.id, // Now always numeric
             quizAttemptId: quizAttemptId || (() => {
               const stored = localStorage.getItem("currentQuizAttemptId");
               return stored ? parseInt(stored) : null;

@@ -55,8 +55,8 @@ const Dashboard: React.FC = () => {
           return;
         }
 
-        // Only call API for non-temporary users (temporary users have IDs like "temp_sessionId")
-        if (user && !String(user.id).startsWith("temp_")) {
+        // Only call API for non-temporary users
+        if (user && !user.isTemporary) {
           try {
             quizData = await getLatestQuizData();
           } catch (error) {
@@ -776,7 +776,7 @@ const Dashboard: React.FC = () => {
           >
             <QuizAttemptHistory
               key={refreshKey}
-              userId={parseInt(String(user.id))}
+              userId={user.id}
               onQuizSelected={handleQuizSelected}
             />
           </motion.div>

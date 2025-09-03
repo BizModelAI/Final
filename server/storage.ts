@@ -307,7 +307,14 @@ class Storage {
       if (err.code === 'P2002') {
         console.info(`[INFO] storeTemporaryUser: User with email ${email} already exists, reusing existing user (non-fatal)`);
         const user = await this.prisma.user.findUnique({ where: { email } });
-        if (user) return user;
+        if (user) {
+          // Update the sessionId for the existing user to match the current session
+          const updatedUser = await this.prisma.user.update({
+            where: { id: user.id },
+            data: { sessionId }
+          });
+          return updatedUser;
+        }
       }
       throw err;
     }

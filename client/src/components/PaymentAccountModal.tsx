@@ -467,8 +467,7 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
 
     try {
       // Determine if this is a temporary user
-      const isTemporaryUser =
-        user.isTemporary || user.id.toString().startsWith("temp_");
+      const isTemporaryUser = user.isTemporary;
 
       if (isTemporaryUser) {
         // Anonymous users always pay $9.99
@@ -483,7 +482,7 @@ export const PaymentAccountModal: React.FC<PaymentAccountModalProps> = ({
           // User has a valid quiz attempt, create payment intent
           try {
             const data = await apiPost("/api/create-report-unlock-payment", {
-              userId: user.id,
+              userId: user.id, // Now always numeric
               quizAttemptId: parseInt(storedQuizAttemptId),
             });
             setAmount(parseFloat(data.amount) || 4.99);

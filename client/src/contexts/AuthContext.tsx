@@ -3,7 +3,7 @@ import { API_ROUTES, apiGet, apiPost, apiPut, apiDelete } from '../utils/apiClie
 import { QuizData } from "../types";
 
 interface User {
-  id: string;
+  id: number; // Always numeric database ID
   email: string;
   firstName?: string;
   lastName?: string;
