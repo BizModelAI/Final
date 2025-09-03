@@ -227,22 +227,13 @@ export async function registerRoutes(app: express.Express): Promise<void> {
     try {
       // Optionally check database connection
       let dbStatus = 'unknown';
-      let quizAttemptCount = 0;
       try {
         await storage.testConnection();
         dbStatus = 'healthy';
-        // Test quiz attempt table access
-        quizAttemptCount = await storage.prisma.quizAttempt.count();
       } catch (e) {
         dbStatus = 'unhealthy';
-        console.error("Database health check failed:", e);
       }
-      res.status(200).json({ 
-        status: 'ok', 
-        database: dbStatus, 
-        quizAttempts: quizAttemptCount,
-        environment: process.env.NODE_ENV || 'unknown' 
-      });
+      res.status(200).json({ status: 'ok', database: dbStatus, environment: process.env.NODE_ENV || 'unknown' });
     } catch (error) {
       handleApiError(res, error, "/api/health");
     }
@@ -899,22 +890,12 @@ export async function registerRoutes(app: express.Express): Promise<void> {
       console.log("Quiz attempt data:", { userId: finalUserId, quizData, sessionId: sessionKey });
       
       // Record the quiz attempt using centralized method
-      let attempt;
-      try {
-        attempt = await storage.createQuizAttemptWithAccess({
-          userId: finalUserId,
-          quizData,
-          sessionId: finalUserId ? undefined : sessionKey, // Only set sessionId for anonymous users
-          isPaid,
-        });
-        console.log(`✅ Quiz attempt created successfully: ${attempt.id}`);
-      } catch (error) {
-        console.error("❌ Error creating quiz attempt:", error);
-        return res.status(500).json({ 
-          error: "Failed to save quiz results",
-          details: "There was an error saving your quiz results. Please try again or contact support."
-        });
-      }
+      const attempt = await storage.createQuizAttemptWithAccess({
+        userId: finalUserId,
+        quizData,
+        sessionId: finalUserId ? undefined : sessionKey, // Only set sessionId for anonymous users
+        isPaid,
+      });
 
       // Note: Session establishment removed - frontend will handle user ID locally during quiz flow
 
@@ -980,12 +961,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
       const attempt = await storage.getQuizAttempt(quizAttemptId);
 
       if (!attempt) {
-        console.error(`Quiz attempt ${quizAttemptId} not found for user ${currentUserId}`);
-        console.error(`Available quiz attempts for user:`, await storage.getQuizAttempts(currentUserId));
-        return res.status(404).json({ 
-          error: "Quiz attempt not found",
-          details: "The quiz attempt may have expired or been deleted. Please retake the quiz or contact support."
-        });
+        return res.status(404).json({ error: "Quiz attempt not found" });
       }
 
       // Check if user owns this quiz attempt
@@ -1056,12 +1032,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
         // Verify the quiz attempt belongs to this user/session
         const attempt = await storage.getQuizAttempt(quizAttemptId);
         if (!attempt) {
-          console.error(`Quiz attempt ${quizAttemptId} not found for session ${sessionKey}`);
-          console.error(`Current user ID: ${currentUserId}, Session ID: ${sessionKey}`);
-          return res.status(404).json({ 
-            error: "Quiz attempt not found",
-            details: "The quiz attempt may have expired or been deleted. Please retake the quiz or contact support."
-          });
+          return res.status(404).json({ error: "Quiz attempt not found" });
         }
         
         // Check ownership: either userId matches or sessionId matches for anonymous users
