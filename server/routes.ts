@@ -1359,6 +1359,37 @@ export async function registerRoutes(app: express.Express): Promise<void> {
 
   // Access pass concept removed - use report unlock payments instead
 
+  // Get business resources for a specific business model
+  app.get("/api/business-resources/:businessId", async (req: Request, res: Response) => {
+    try {
+      const { businessId } = req.params;
+      
+      if (!businessId) {
+        return res.status(400).json({ error: "Missing businessId" });
+      }
+
+      // Return mock business resources data
+      const mockResources = {
+        businessId,
+        resources: {
+          overview: "Getting started with your business model",
+          prerequisites: "Essential requirements and setup",
+          implementation: "Step-by-step implementation guide",
+          tools: "Recommended tools and software",
+          growth: "Growth strategies and optimization",
+          mistakes: "Common pitfalls to avoid",
+          templates: "Useful templates and resources"
+        },
+        lastUpdated: new Date().toISOString()
+      };
+
+      res.json(mockResources);
+    } catch (error) {
+      console.error("Error getting business resources:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get pricing for user without creating payment intent
   app.get("/api/user-pricing/:userId", async (req: Request, res: Response) => {
     try {
