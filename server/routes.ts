@@ -1,8 +1,4 @@
-import express from "express";
-
-type Express = express.Express;
-type Request = express.Request;
-type Response = express.Response;
+import express, { Request, Response, NextFunction } from "express";
 import { storage } from './storage.js';
 import { getUserIdFromRequest, getSessionKey, setupAuthRoutes } from "./auth.js";
 import { requireAdminAuth } from "./middleware/adminAuth.js";
@@ -22,7 +18,7 @@ import {
   getIncomeGoalRange, 
   getTimeCommitmentRange, 
   getInvestmentRange 
-} from "./utils/quizUtils";
+} from "./utils/quizUtils.js";
 // import { registerDebugRoutes } from './debug-routes.js';
 
 // Define proper error types for better error handling
@@ -220,7 +216,7 @@ async function claimAnonymousQuizAttemptsForUser(user: { id: number; email: stri
   }
 }
 
-export async function registerRoutes(app: Express): Promise<void> {
+export async function registerRoutes(app: express.Express): Promise<void> {
   // registerDebugRoutes(app);
 
   // Setup authentication routes
@@ -381,24 +377,24 @@ export async function registerRoutes(app: Express): Promise<void> {
         ),
       ])) as Response;
 
-      if (!openaiResponse.ok) {
-        const errorText = await openaiResponse.text();
+      if (!(openaiResponse as any).ok) {
+        const errorText = await (openaiResponse as any).text();
         console.error(
-          `OpenAI API error: ${openaiResponse.status}`,
+          `OpenAI API error: ${(openaiResponse as any).status}`,
           errorText,
         );
         throw new Error(
-          `OpenAI API error: ${openaiResponse.status} - ${errorText}`,
+          `OpenAI API error: ${(openaiResponse as any).status} - ${errorText}`,
         );
       }
 
-      const data = await openaiResponse.json();
+      const data = await (openaiResponse as any).json();
       console.log(
         "OpenAI API response received, content length:",
         data.choices?.[0]?.message?.content?.length || 0,
       );
 
-      const content = data.choices[0].message.content;
+      const content = (data as any).choices[0].message.content;
 
       res.json({ content });
     } catch (error) {
@@ -502,7 +498,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
 
       const data = await openaiResponse.json();
-      const content = data.choices[0].message.content;
+      const content = (data as any).choices[0].message.content;
       const result = JSON.parse(content);
 
       // Store skills analysis in database if user is authenticated
@@ -524,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         }
       } catch (dbError) {
         // Import error handler dynamically to avoid circular dependencies
-        const { ErrorHandler } = await import("./utils/errorHandler");
+        const { ErrorHandler } = await import("./utils/errorHandler.js");
         await ErrorHandler.handleStorageError(dbError as Error, {
           operation: "store_skills_analysis",
           context: {},
@@ -592,7 +588,7 @@ export async function registerRoutes(app: Express): Promise<void> {
           }
         }
       } catch (dbError) {
-        const { ErrorHandler } = await import("./utils/errorHandler");
+        const { ErrorHandler } = await import("./utils/errorHandler.js");
         await ErrorHandler.handleStorageError(dbError as Error, {
           operation: "store_fallback_skills_analysis",
           context: {},
@@ -2611,7 +2607,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
           }
 
           const data = await openaiResponse.json();
-          const content = data.choices[0].message.content;
+          const content = (data as any).choices[0].message.content;
 
           descriptions.push({
             businessId: match.id,
@@ -2641,7 +2637,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
             }
           }
         } catch (dbError) {
-          const { ErrorHandler } = await import("./utils/errorHandler");
+          const { ErrorHandler } = await import("./utils/errorHandler.js");
           await ErrorHandler.handleStorageError(dbError as Error, {
             operation: "store_business_fit_descriptions",
             context: {},
@@ -2686,7 +2682,7 @@ ${index === 0 ? "As your top match, this path offers the best alignment with you
             }
           }
         } catch (dbError) {
-          const { ErrorHandler } = await import("./utils/errorHandler");
+          const { ErrorHandler } = await import("./utils/errorHandler.js");
           await ErrorHandler.handleStorageError(dbError as Error, {
             operation: "store_fallback_business_fit_descriptions",
             context: {},
@@ -2795,7 +2791,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
           }
 
           const data = await openaiResponse.json();
-          const content = data.choices[0].message.content;
+          const content = (data as any).choices[0].message.content;
 
           descriptions.push({
             businessId: match.id,
@@ -2825,7 +2821,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
             }
           }
         } catch (dbError) {
-          const { ErrorHandler } = await import("./utils/errorHandler");
+          const { ErrorHandler } = await import("./utils/errorHandler.js");
           await ErrorHandler.handleStorageError(dbError as Error, {
             operation: "store_business_avoid_descriptions",
             context: {},
@@ -2868,7 +2864,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
             }
           }
         } catch (dbError) {
-          const { ErrorHandler } = await import("./utils/errorHandler");
+          const { ErrorHandler } = await import("./utils/errorHandler.js");
           await ErrorHandler.handleStorageError(dbError as Error, {
             operation: "store_fallback_business_avoid_descriptions",
             context: {},
@@ -3020,7 +3016,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
       console.log(`API: GET /api/business-model-scores/${attemptId} - Retrieving scores`);
 
       // Import centralized scoring service
-      const { centralizedScoringService } = await import("./services/centralizedScoringService");
+      const { centralizedScoringService } = await import("./services/centralizedScoringService.js");
       
       // Get stored scores
       const scores = await centralizedScoringService.getStoredScores(attemptId);
@@ -3052,7 +3048,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
       console.log(`API: POST /api/send-quiz-results - Sending email to ${email} for attempt ${attemptId}`);
 
       // Import email service
-      const { emailService } = await import("./services/emailService");
+      const { emailService } = await import("./services/emailService.js");
       
       // Send the quiz results email
       const result = await emailService.sendQuizResults(email, quizData, attemptId);

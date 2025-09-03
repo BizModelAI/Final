@@ -1,8 +1,8 @@
-import { businessPaths } from '../../shared/businessPaths';
+import { businessPaths } from '../../shared/businessPaths.js';
 import { centralizedScoringService } from './centralizedScoringService.js';
 
 // Import client business models for consistency
-import { businessModels as clientBusinessModels } from '../../client/src/data/businessModels';
+import { businessModels as clientBusinessModels } from '../../client/src/data/businessModels.js';
 
 // Get business model data - always use client business models for consistency
 const getClientBusinessModels = () => {
@@ -23,7 +23,7 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
   let calculatedMatches = preCalculatedScores;
   if (!calculatedMatches || calculatedMatches.length === 0) {
     // For new quiz attempts (like emails), always calculate fresh scores from quiz data
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
     calculatedMatches = calculateAllBusinessModelMatches(quizData);
     console.log(`✅ Calculated ${calculatedMatches.length} fresh scores for new quiz attempt`);
     
@@ -39,7 +39,7 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
   if (!calculatedMatches || calculatedMatches.length === 0) {
     console.log('⚠️ No scores calculated, using fallback local calculation');
     try {
-      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
       calculatedMatches = calculateAllBusinessModelMatches(quizData);
       console.log(`✅ Fallback calculation successful: ${calculatedMatches.length} scores`);
     } catch (fallbackError) {
@@ -900,13 +900,13 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
 }
 
 export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
-  const { businessPaths } = await import('../../shared/businessPaths');
+  const { businessPaths } = await import('../../shared/businessPaths.js');
   
   // Use pre-calculated scores if provided, otherwise calculate fresh scores for new quiz attempt
   let calculatedMatches = preCalculatedScores;
   if (!calculatedMatches || calculatedMatches.length === 0) {
     // For new quiz attempts (like emails), always calculate fresh scores from quiz data
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
     calculatedMatches = calculateAllBusinessModelMatches(quizData);
     console.log(`✅ Calculated ${calculatedMatches.length} fresh scores for new quiz attempt`);
     
@@ -922,7 +922,7 @@ export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: numbe
   if (!calculatedMatches || calculatedMatches.length === 0) {
     console.log('⚠️ No scores calculated, using fallback local calculation');
     try {
-      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring.js');
       calculatedMatches = calculateAllBusinessModelMatches(quizData);
       console.log(`✅ Fallback calculation successful: ${calculatedMatches.length} scores`);
     } catch (fallbackError) {

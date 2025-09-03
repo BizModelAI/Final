@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from '../db.js';
 import { centralizedScoringService } from './centralizedScoringService.js';
 
 export interface BusinessModelScore {

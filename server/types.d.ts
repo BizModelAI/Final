@@ -1,44 +1,45 @@
-// Type declarations for modules that TypeScript can't find
-
-declare module "express" {
-  import express from "express";
-  export = express;
-  export as namespace express;
-}
-
-declare module "bcrypt" {
-  export function hash(
-    data: string | Buffer,
-    saltOrRounds: string | number,
-  ): Promise<string>;
-  export function compare(
-    data: string | Buffer,
-    encrypted: string,
-  ): Promise<boolean>;
-  export function hashSync(
-    data: string | Buffer,
-    saltOrRounds: string | number,
-  ): string;
-  export function compareSync(
-    data: string | Buffer,
-    encrypted: string,
-  ): boolean;
-  export function genSalt(rounds?: number): Promise<string>;
-  export function genSaltSync(rounds?: number): string;
-}
-
-declare module "express-session" {
-  import session from "express-session";
-  export = session;
-  export as namespace session;
-
-  interface SessionData {
-    userId?: number;
-    testValue?: string;
+// Type declarations for server
+declare module 'express' {
+  interface Request {
+    session?: any;
+    sessionID?: string;
+    ip?: string;
+    connection?: any;
+    protocol?: string;
+    body?: any;
+    params?: any;
+    query?: any;
+    headers?: any;
+    method?: string;
+    originalUrl?: string;
+    path?: string;
+    get?(name: string): string | undefined;
+  }
+  
+  interface Response {
+    status(code: number): Response;
+    json(obj?: any): Response;
+    send(data: any): Response;
+    sendStatus(code: number): Response;
+    setHeader(name: string, value: string | number): Response;
+    header(name: string, value: string): Response;
+    getHeaders(): any;
+    headersSent?: boolean;
+    clearCookie(name: string): Response;
+    sendFile(path: string): void;
   }
 }
 
-declare module "memorystore" {
-  function MemoryStore(session: any): any;
-  export = MemoryStore;
+export interface AdminAuthRequest {
+  adminUser?: any;
+  session?: any;
+  sessionID?: string;
+  ip?: string;
+  connection?: any;
+  protocol?: string;
+  body?: any;
+  params?: any;
+  query?: any;
+  headers?: any;
+  get?(name: string): string | undefined;
 }

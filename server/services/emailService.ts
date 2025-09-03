@@ -1,10 +1,10 @@
-import type { QuizData } from "../../shared/types";
+import type { QuizData } from "../../shared/types.js";
 import { Resend } from "resend";
 import { PrismaClient } from '@prisma/client';
 import { centralizedScoringService } from "./centralizedScoringService.js";
 
 const prisma = new PrismaClient();
-import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils";
+import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils.js";
 import { generatePreviewEmailHTML, generatePaidEmailHTML } from "./newEmailTemplates.js";
 
 const resend = process.env.RESEND_API_KEY
@@ -178,7 +178,7 @@ export class EmailService {
 
   private async checkUnsubscribeStatus(email: string): Promise<boolean> {
     try {
-      const { storage } = await import("../storage");
+      const { storage } = await import("../storage.js");
       const user = await storage.getUserByEmail(email);
       return user?.isUnsubscribed || false;
     } catch (error) {
@@ -381,16 +381,16 @@ export class EmailService {
     const topMatch = scoredBusinessModels[0];
 
     // Get business model description from centralized data
-    const getBusinessModelDescription = (modelName: string): string => {
+    const getBusinessModelDescription = async (modelName: string): Promise<string> => {
       // Import shared business model data for consistent descriptions
-      const { businessPaths } = require('../../shared/businessPaths');
+      const { businessPaths } = await import('../../shared/businessPaths.js');
       const model = businessPaths.find((m: any) => m.name === modelName);
       return model?.description || `Expert guidance in ${modelName}`;
     };
 
     return {
       name: topMatch.name,
-      description: getBusinessModelDescription(topMatch.name),
+      description: await getBusinessModelDescription(topMatch.name),
       fitScore: Math.round(topMatch.score),
     };
   }

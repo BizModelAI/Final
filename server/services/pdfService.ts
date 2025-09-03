@@ -1,5 +1,5 @@
 import * as puppeteer from "puppeteer";
-import { QuizData } from "../../shared/types";
+import { QuizData } from "../../shared/types.js";
 
 export interface PDFGenerationOptions {
   quizData: QuizData;

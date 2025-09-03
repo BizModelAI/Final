@@ -1,6 +1,6 @@
 // Proper Admin Authentication Middleware
 import { Request, Response, NextFunction } from "express-serve-static-core";
-import { createErrorResponse } from "../utils/errorHandler";
+import { createErrorResponse } from "../utils/errorHandler.js";
 
 interface AdminAuthRequest extends Request {
   admin?: {

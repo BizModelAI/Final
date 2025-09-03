@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { calculateAllBusinessModelMatches } from '../../shared/scoring';
-import type { QuizData } from '../../shared/types';
+import { calculateAllBusinessModelMatches } from '../../shared/scoring.js';
+import type { QuizData } from '../../shared/types.js';
 
 const prisma = new PrismaClient();
 

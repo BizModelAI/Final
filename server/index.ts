@@ -1,9 +1,12 @@
 import 'dotenv/config';
-import express from "express";
-import type { Request, Response, NextFunction } from "express-serve-static-core";
+import express, { Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes.js";
 import path from "path";
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -35,17 +38,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Stripe webhook requires the raw body for signature verification
 // Apply raw parser only for the webhook route before JSON body parsing
-app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }) as any);
 
 // Add middleware for parsing request bodies for all other routes
 // Skip JSON/urlencoded parsing for Stripe webhook to preserve raw body
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.originalUrl === '/api/stripe/webhook') return next();
-  return express.json()(req, res, next);
+  return (express.json() as any)(req, res, next);
 });
 app.use((req: Request, res: Response, next: NextFunction) => {
   if (req.originalUrl === '/api/stripe/webhook') return next();
-  return express.urlencoded({ extended: true })(req, res, next);
+  return (express.urlencoded({ extended: true }) as any)(req, res, next);
 });
 
 // Session middleware configuration
@@ -64,7 +67,7 @@ app.use(session({
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
-}));
+}) as any);
 
 (async () => {
   try {
@@ -73,7 +76,7 @@ app.use(session({
     if (process.env.NODE_ENV === "production") {
       // Serve static files from the client build directory
       const clientDistPath = path.join(__dirname, "../client/dist");
-      app.use(express.static(clientDistPath));
+      app.use(express.static(clientDistPath) as any);
       
       // Catch all handler for SPA routing
       app.get('*', (req: Request, res: Response) => {
@@ -81,7 +84,7 @@ app.use(session({
       });
     }
     
-    app.listen(port, '0.0.0.0', () => {
+    app.listen(Number(port), '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${port}`);
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`📊 Health check available at: http://localhost:${port}/api/health`);

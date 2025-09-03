@@ -128,7 +128,7 @@ class Storage {
       // Schedule scoring to happen after transaction commits
       setTimeout(async () => {
         try {
-          const { centralizedScoringService } = await import('./services/centralizedScoringService');
+          const { centralizedScoringService } = await import('./services/centralizedScoringService.js');
           await centralizedScoringService.calculateAndStoreScores(quizData, attempt.id);
           console.log(`✅ Business model scores calculated and stored for quiz attempt ${attempt.id}`);
         } catch (error) {

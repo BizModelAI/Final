@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import type { Response } from 'express-serve-static-core';
 
 // Lazy validation - don't throw at module load

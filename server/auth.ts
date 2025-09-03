@@ -1,11 +1,7 @@
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import { storage } from "./storage.js";
 import * as bcrypt from "bcrypt";
 import * as crypto from "crypto";
-
-type Express = express.Express;
-type Request = express.Request;
-type Response = express.Response;
 
 // Standardized error handler for consistent API responses
 function handleApiError(res: Response, error: unknown, context: string = 'API request', statusCode: number = 500) {
@@ -122,7 +118,7 @@ export function setUserIdInRequest(req: any, userId: number): void {
 
 // Session types are now declared in server/types.d.ts
 
-export function setupAuthRoutes(app: Express) {
+export function setupAuthRoutes(app: express.Express) {
   // Global CORS middleware handles CORS for all routes including auth
   // No need for route-level CORS headers
 
@@ -662,7 +658,7 @@ export function setupAuthRoutes(app: Express) {
 
       // Send email with reset link
       try {
-        const { emailService } = await import("./services/emailService");
+        const { emailService } = await import("./services/emailService.js");
         const baseUrl = req.get("host")?.includes("localhost")
           ? `${req.protocol}://${req.get("host")}`
           : "https://bizmodelai.com";
@@ -873,7 +869,7 @@ export function setupAuthRoutes(app: Express) {
 
       console.log(`New contact form submission from: ${email}`);
 
-      const { emailService } = await import("./services/emailService");
+      const { emailService } = await import("./services/emailService.js");
 
       // Send notification to team@bizmodelai.com
       let notificationSent = false;

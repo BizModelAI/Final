@@ -3,8 +3,8 @@ services:
     name: bizmodelai
     env: node
     plan: starter
-    buildCommand: npm install && npm run build
-    startCommand: npm start
+    buildCommand: yarn install && yarn build
+    startCommand: yarn start
     envVars:
       - key: NODE_ENV
         value: production
@@ -12,8 +12,6 @@ services:
         value: 10000
     healthCheckPath: /api/health
     autoDeploy: true
-    domains:
-      - www.bizmodelai.com
 
   - type: pserv
     name: bizmodelai-db

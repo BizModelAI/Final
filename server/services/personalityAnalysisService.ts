@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { QuizData } from "../../shared/types";
+import { QuizData } from "../../shared/types.js";
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
@@ -79,7 +79,7 @@ export class PersonalityAnalysisService {
 
   private async buildPersonalityPrompt(quizData: QuizData): Promise<string> {
     // Import centralized utility function
-    const { getRatingDescription } = await import("../utils/quizUtils");
+    const { getRatingDescription } = await import("../utils/quizUtils.js");
 
     return `
     Analyze your personality traits based on your quiz responses. Be extremely precise and avoid generic scores.

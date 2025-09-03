@@ -1,6 +1,6 @@
 import OpenAI from "openai";
-import { QuizData, BusinessPath } from "../../shared/types";
-import { businessPaths } from "../../shared/businessPaths";
+import { QuizData, BusinessPath } from "../../shared/types.js";
+import { businessPaths } from "../../shared/businessPaths.js";
 import { 
   getRatingDescription, 
   getIncomeGoalRange, 
