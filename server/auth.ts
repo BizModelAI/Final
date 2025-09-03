@@ -370,7 +370,6 @@ export function setupAuthRoutes(app: express.Express) {
       }
 
       const { email, password, firstName, lastName, quizData = {} } = req.body;
-      console.log("Signup request body:", { email, firstName, lastName, hasQuizData: !!quizData, quizDataKeys: Object.keys(quizData) });
 
       if (!email || !password || !firstName || !lastName) {
         console.log("Signup validation failed: missing required fields");
@@ -476,27 +475,21 @@ export function setupAuthRoutes(app: express.Express) {
       
       // Get the actual user ID from storage
       const tempUser = await storage.getTemporaryUser(sessionId);
-      console.log("Retrieved tempUser:", { tempUser, sessionId });
       if (tempUser) {
         // Create quiz attempt if quiz data was provided
         let quizAttemptId = null;
-        console.log("Quiz data check:", { quizData, hasQuizData: quizData && Object.keys(quizData).length > 0 });
         if (quizData && Object.keys(quizData).length > 0) {
           try {
-            console.log("Creating quiz attempt for new user during signup with sessionId:", sessionId);
             const attempt = await storage.createQuizAttemptWithAccess({
-              sessionId: sessionId,
+              userId: tempUser.id, // Use the numeric user ID for temporary users
               quizData,
               isPaid: false,
             });
             quizAttemptId = attempt.id;
-            console.log(`Quiz attempt ${quizAttemptId} created for new user ${tempUser.id}`);
           } catch (quizError) {
             console.error("Error creating quiz attempt during signup:", quizError);
             // Continue anyway - the user can still proceed
           }
-        } else {
-          console.log("No quiz data provided or quiz data is empty, skipping quiz attempt creation");
         }
         
         // Establish session for the temporary user with the correct numeric ID
