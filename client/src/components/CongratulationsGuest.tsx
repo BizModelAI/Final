@@ -212,7 +212,7 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
         saveSuccess = true;
         if (result.attemptId) {
           quizAttemptId = result.attemptId;
-          localStorage.setItem("quizAttemptId", quizAttemptId.toString());
+          localStorage.setItem("currentQuizAttemptId", quizAttemptId.toString());
         }
         localStorage.setItem("userEmail", email.trim());
         } else {

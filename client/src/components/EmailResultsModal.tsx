@@ -190,7 +190,7 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
         
         // Update quizAttemptId if provided by the save operation
         if (saveData.attemptId) {
-          localStorage.setItem("quizAttemptId", saveData.attemptId.toString());
+          localStorage.setItem("currentQuizAttemptId", saveData.attemptId.toString());
           }
         } else {
           // Quiz data already exists, just use the email
