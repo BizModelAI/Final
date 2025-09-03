@@ -804,13 +804,10 @@ export async function registerRoutes(app: express.Express): Promise<void> {
   // Record a new quiz attempt
   app.post("/api/quiz-attempts/attempt", async (req: Request, res: Response) => {
     try {
-      console.log("=== QUIZ ATTEMPT CREATION START ===");
       const { userId, quizData, email } = req.body;
-      console.log("Request body:", req.body);
-      console.log("Parsed data:", { userId, hasQuizData: !!quizData, quizDataType: typeof quizData, email });
 
       if (!quizData) {
-        console.log("Missing required field - quizData:", quizData);
+
         return res.status(400).json({ error: "Quiz data is required" });
       }
 
@@ -822,31 +819,24 @@ export async function registerRoutes(app: express.Express): Promise<void> {
       // Handle different user scenarios
       if (userId) {
         // Authenticated user - look up existing user
-        console.log("Step 1: Looking up user with ID:", userId);
         user = await storage.getUser(userId);
-        console.log("User lookup result:", user ? `Found user ${user.id}` : "User not found");
         
         if (!user) {
-          console.log("Step 2: Creating new user for userId:", userId);
           try {
             user = await storage.createUser({
               email: `user${userId}@example.com`,
               password: "test123",
             });
-            console.log("New user created successfully:", user.id);
           } catch (createUserError) {
             console.error("Error creating user:", createUserError);
             throw createUserError;
           }
         }
 
-        console.log("Step 3: Getting user stats");
         const attemptsCount = await storage.getQuizAttemptsCount(userId);
         isPaid = await storage.isPaidUser(userId);
-        console.log("User stats:", { attemptsCount, isPaid });
       } else if (email) {
         // User with email but no userId - check for existing user or create temporary
-        console.log("Step 1: Processing email user:", email);
         const existingUser = await storage.getUserByEmail(email);
         
         if (existingUser && !existingUser.isTemporary) {
@@ -864,7 +854,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
             sessionId: sessionKey,
             updatedAt: new Date(),
           });
-          console.log(`Updated session for existing temporary user for email: ${email}`);
+
         } else {
           // No user exists with this email - create new temporary user
           user = await storage.storeTemporaryUser(sessionKey, email, {
@@ -873,11 +863,10 @@ export async function registerRoutes(app: express.Express): Promise<void> {
           });
           finalUserId = user.id;
           isPaid = false;
-          console.log(`Created new temporary user for email: ${email}`);
+
         }
       } else {
         // Anonymous user - no userId or email
-        console.log("Step 1: Processing anonymous user");
         finalUserId = null;
         isPaid = false;
       }
@@ -886,8 +875,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
       // - Everyone can take unlimited quiz attempts for free
       // - They pay per report unlock when they want full reports
 
-      console.log("Step 4: About to create quiz attempt");
-      console.log("Quiz attempt data:", { userId: finalUserId, quizData, sessionId: sessionKey });
+
       
       // Record the quiz attempt using centralized method
       const attempt = await storage.createQuizAttemptWithAccess({
@@ -900,7 +888,6 @@ export async function registerRoutes(app: express.Express): Promise<void> {
       // Note: Session establishment removed - frontend will handle user ID locally during quiz flow
 
       // No retake decrements in the new system
-      console.log("Pay-per-quiz model - no retakes to decrement");
 
       // Enhanced response with detailed information
       const responseData: any = {
@@ -1133,13 +1120,13 @@ export async function registerRoutes(app: express.Express): Promise<void> {
               email,
               password: "temp-password-" + Math.random().toString(36).substring(2), // Temporary password
             });
-            console.log("User created with ID:", user.id);
+
           } else {
-            console.log("User already exists with email:", email, "ID:", user.id);
+
           }
 
           // Link all anonymous attempts from this session to the user
-          console.log("Linking anonymous attempts to user:", user.id);
+
           await claimAnonymousQuizAttemptsForUser(user, sessionId);
 
           // Set user ID in session for future requests
@@ -2098,7 +2085,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
           const quizAttempt = await storage.getQuizAttempt(parseInt(paymentIntent.metadata.quizAttemptId));
           
           if (!user || !quizAttempt) {
-            console.log("User or quiz attempt not found");
+
             return res.json({ received: true });
           }
           
