@@ -34,19 +34,22 @@ model User {
 }
 
 model QuizAttempt {
-  id           Int            @id @default(autoincrement())
-  userId       Int?           @map("user_id")
-  sessionId    String?        @map("session_id")
-  quizData     Json           @map("quiz_data")
-  isPaid       Boolean        @default(false) @map("is_paid")
-  completedAt  DateTime       @default(now()) @map("completed_at")
-  expiresAt    DateTime?      @map("expires_at")
-  aiContents   AiContent[]
-  payments     Payment[]
-  user         User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reportAccess ReportAccess[]
-  reportViews  ReportView[]
-  businessModelScores BusinessModelScores[] // Add this relation
+  id                  Int                   @id @default(autoincrement())
+  userId              Int?                  @map("user_id")
+  sessionId           String?               @map("session_id")
+  quizData            Json                  @map("quiz_data")
+  isPaid              Boolean               @default(false) @map("is_paid")
+  completedAt         DateTime              @default(now()) @map("completed_at")
+  expiresAt           DateTime?             @map("expires_at")
+  quizAttemptId       String?               @map("quiz_attempt_id")
+  aiContent           Json?                 @map("ai_content")
+  isReportUnlocked    Boolean               @default(false) @map("is_report_unlocked")
+  aiContents          AiContent[]
+  payments            Payment[]
+  user                User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportAccess        ReportAccess[]
+  reportViews         ReportView[]
+  businessModelScores BusinessModelScores[]
 
   @@index([userId], map: "idx_quiz_attempt_user")
   @@index([sessionId], map: "idx_quiz_attempt_session")
