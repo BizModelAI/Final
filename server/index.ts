@@ -75,7 +75,7 @@ app.use(session({
     
     if (process.env.NODE_ENV === "production") {
       // Serve static files from the client build directory
-      const clientDistPath = path.join(__dirname, "../client/dist");
+      const clientDistPath = path.join(__dirname, "../../client/dist");
       app.use(express.static(clientDistPath) as any);
       
       // Catch all handler for SPA routing
