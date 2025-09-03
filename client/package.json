@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run build:server",
     "build:server": "cd .. && tsc --project server/tsconfig.server.json",
     "preview": "vite preview"
   },
