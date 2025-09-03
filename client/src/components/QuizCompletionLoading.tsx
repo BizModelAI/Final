@@ -2,16 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
-  Zap,
   Target,
   Users,
-  TrendingUp,
   CheckCircle,
   Sparkles,
   BarChart3,
   Award,
-  Calendar,
-  Lightbulb,
 } from "lucide-react";
 import { QuizData, BusinessPath } from "../types";
 import { reportViewManager } from "../utils/reportViewManager";
@@ -824,8 +820,12 @@ Examples: {"characteristics": ["Highly self-motivated", "Strategic risk-taker", 
           // Step 2: Generate AI-powered personalized paths
           const step2Result = await executeStep(1, async () => {
             // Use the same business model scoring system as Results page
+            const quizAttemptId = localStorage.getItem("currentQuizAttemptId");
             const businessMatches =
-              businessModelService.getBusinessModelMatches(activeQuizData);
+              await businessModelService.getBusinessModelMatches(
+                activeQuizData,
+                quizAttemptId ? parseInt(quizAttemptId) : undefined
+              );
 
             // Convert to BusinessPath format for compatibility
             const paths = businessMatches.slice(0, 7).map((match) => ({

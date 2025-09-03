@@ -2,25 +2,20 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BookOpen,
   Target,
   BarChart3,
   Clock,
   TrendingUp,
   Star,
   CheckCircle,
-  Award,
-  Users,
   Calendar,
   Edit,
-  ChevronLeft,
   Wallet,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { businessModelService } from "../utils/businessModelService";
 import { QuizData } from "../types";
 import { Link, useNavigate } from "react-router-dom";
-import { businessPaths } from "../data/businessPaths";
 import { businessModels } from "../data/businessModels";
 import { QuizAttemptHistory } from "../components/QuizAttemptHistory";
 import { getSafeEmoji } from '../utils/contentUtils';

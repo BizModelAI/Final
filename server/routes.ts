@@ -1,21 +1,16 @@
-// @ts-nocheck - TODO: Fix type errors systematically (storage.ts needs proper Prisma type handling)
 import express from "express";
 
 type Express = express.Express;
 type Request = express.Request;
 type Response = express.Response;
-import { createServer, type Server } from "http";
 import { storage } from './storage';
 import { getUserIdFromRequest, getSessionKey, setupAuthRoutes } from "./auth";
 import { requireAdminAuth } from "./middleware/adminAuth";
-import { generateBusinessResources } from "./services/resourceService";
 import { pdfService } from "./services/pdfService";
 import { emailService } from "./services/emailService";
 import { aiScoringService } from "./services/aiScoringService";
-import { personalityAnalysisService } from "./services/personalityAnalysisService";
 import { ReportAccessService } from "./services/reportAccessService";
 import { db } from "./db";
-import { Prisma, type User, type QuizAttempt, type Payment, type AiContent } from "@prisma/client";
 import Stripe from "stripe";
 import {
   Client,
@@ -41,6 +36,20 @@ interface StripeError extends Error {
   code?: string;
   decline_code?: string;
   param?: string;
+}
+
+// Standardized error handler for consistent API responses
+function handleApiError(res: Response, error: unknown, context: string = 'API request', statusCode: number = 500) {
+  console.error(`Error in ${context}:`, error);
+  
+  // Extract error message safely
+  const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+  
+  // Send standardized error response
+  res.status(statusCode).json({
+    error: errorMessage,
+    context: context
+  });
 }
 
 // Secure session/user-based rate limiter for OpenAI requests
@@ -230,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<void> {
       }
       res.status(200).json({ status: 'ok', database: dbStatus, environment: process.env.NODE_ENV || 'unknown' });
     } catch (error) {
-      res.status(500).json({ status: 'unhealthy', error: error instanceof Error ? error.message : String(error) });
+      handleApiError(res, error, "/api/health");
     }
   });
 
@@ -419,11 +428,18 @@ export async function registerRoutes(app: Express): Promise<void> {
     try {
       const { quizData, requiredSkills, businessModel, userProfile } = req.body;
 
+      // Validate required parameters
+      if (!quizData || !Array.isArray(requiredSkills) || !businessModel) {
+        return res.status(400).json({ 
+          error: "Missing or invalid parameters: quizData, requiredSkills (array), and businessModel are required" 
+        });
+      }
+
       const prompt = `
         Based on your quiz responses, analyze your current skill level for each required skill for ${businessModel}:
 
         YOUR PROFILE:
-        ${userProfile}
+        ${userProfile || 'Profile information not provided'}
 
         REQUIRED SKILLS:
         ${requiredSkills.map((skill: string) => `- ${skill}`).join("\n")}
@@ -523,6 +539,12 @@ export async function registerRoutes(app: Express): Promise<void> {
 
       // Return fallback analysis
       const { requiredSkills } = req.body;
+      
+      // Validate requiredSkills
+      if (!Array.isArray(requiredSkills) || requiredSkills.length === 0) {
+        return res.status(500).json({ error: "Skills analysis fallback failed: invalid requiredSkills" });
+      }
+      
       const third = Math.ceil(requiredSkills.length / 3);
 
       const fallbackResult = {
@@ -1050,10 +1072,20 @@ export async function registerRoutes(app: Express): Promise<void> {
         const quizAttemptId = parseInt(req.params.quizAttemptId);
         const { contentType } = req.query;
         const currentUserId = await getUserIdFromRequest(req);
+        const sessionId = req.sessionID;
 
-        // Require authentication for AI content
-        if (!currentUserId) {
-          return res.status(401).json({ error: "Not authenticated" });
+        // Check if user has access to this quiz attempt
+        const quizAttempt = await storage.getQuizAttempt(quizAttemptId);
+        if (!quizAttempt) {
+          return res.status(404).json({ error: "Quiz attempt not found" });
+        }
+
+        // Allow access if user owns the quiz attempt OR it's from their session
+        const hasAccess = (currentUserId && quizAttempt.userId === currentUserId) || 
+                         (quizAttempt.sessionId === sessionId);
+
+        if (!hasAccess) {
+          return res.status(403).json({ error: "Access denied" });
         }
 
         const aiContent = await storage.getAIContent(quizAttemptId, contentType as string || "results-preview");
@@ -1963,7 +1995,9 @@ export async function registerRoutes(app: Express): Promise<void> {
           console.log(`[PAYPAL DEBUG] Before update: user.id=${user.id}, email=${user.email}, isTemporary=${user.isTemporary}`);
           await storage.updateUser(user.id, { isTemporary: false });
           const updatedUser = await storage.getUser(user.id);
-          console.log(`[PAYPAL DEBUG] After update: user.id=${updatedUser.id}, email=${updatedUser.email}, isTemporary=${updatedUser.isTemporary}`);
+          if (updatedUser) {
+            console.log(`[PAYPAL DEBUG] After update: user.id=${updatedUser.id}, email=${updatedUser.email}, isTemporary=${updatedUser.isTemporary}`);
+          }
           console.log(`Converted user ${user.id} (${user.email}) to permanent after PayPal payment.`);
         }
 
@@ -2081,8 +2115,7 @@ export async function registerRoutes(app: Express): Promise<void> {
   // Get all payments with optional pagination (admin only)
   app.get("/api/admin/payments", async (req: Request, res: Response) => {
     try {
-      // TODO: Add admin authentication check here
-      // For now, we'll add a simple API key check
+      // Admin authentication via API key
       const adminKey = req.headers["x-admin-key"];
       if (adminKey !== process.env.ADMIN_API_KEY) {
         return res.status(401).json({ error: "Unauthorized" });
@@ -2227,9 +2260,9 @@ export async function registerRoutes(app: Express): Promise<void> {
       const existingRefunds = await storage.getRefundsByPayment(paymentId);
       const totalRefunded = existingRefunds
         .filter((r: any) => r.status === "succeeded")
-        .reduce((sum: any, r: any) => sum + parseFloat(r.amount), 0);
+        .reduce((sum: any, r: any) => sum + parseFloat(r.amount.toString()), 0);
 
-      const paymentAmount = parseFloat(payment.amount);
+      const paymentAmount = parseFloat(payment.amount.toString());
       const requestedAmount = parseFloat(amount);
 
       if (totalRefunded + requestedAmount > paymentAmount) {
@@ -2246,7 +2279,7 @@ export async function registerRoutes(app: Express): Promise<void> {
         reason,
         status: "pending",
         adminNote: adminNote || null,
-        adminUserId: null, // TODO: Get admin user ID from session
+        adminUserId: null, // API key-based admin auth, no user session tracked
       });
 
       // Process refund with payment provider
@@ -2455,31 +2488,33 @@ export async function registerRoutes(app: Express): Promise<void> {
   });
 
 
-  // Check rate limit status for an email
-  app.post("/api/check-rate-limit", async (req: Request, res: Response) => {
-    try {
-      const { email } = req.body;
+  // Check rate limit status for an email (development only)
+  if (process.env.NODE_ENV !== 'production') {
+    app.post("/api/check-rate-limit", async (req: Request, res: Response) => {
+      try {
+        const { email } = req.body;
 
-      if (!email) {
-        return res.status(400).json({ error: "Missing email" });
-      }
+        if (!email) {
+          return res.status(400).json({ error: "Missing email" });
+        }
 
-      // Check rate limit without actually sending an email
-      const rateLimitCheck = await emailService.checkEmailRateLimitWithInfo(email);
-      
-      if (!rateLimitCheck.allowed) {
-        res.status(429).json({ 
-          error: "Rate limit exceeded", 
-          rateLimitInfo: rateLimitCheck.info 
-        });
-      } else {
-        res.json({ success: true, message: "No rate limit active" });
+        // Check rate limit without actually sending an email
+        const rateLimitCheck = await emailService.checkEmailRateLimitWithInfo(email);
+        
+        if (!rateLimitCheck.allowed) {
+          res.status(429).json({ 
+            error: "Rate limit exceeded", 
+            rateLimitInfo: rateLimitCheck.info 
+          });
+        } else {
+          res.json({ success: true, message: "No rate limit active" });
+        }
+      } catch (error) {
+        console.error("Error checking rate limit:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
-    } catch (error) {
-      console.error("Error checking rate limit:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+    });
+  }
 
   // Generate detailed "Why This Fits You" descriptions for top 3 business matches
   app.post(
@@ -2856,8 +2891,8 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
 
         let result = null;
         // Just call the migration method if it exists on storage
-        if (typeof storage.migrateAIContentToNewTable === 'function') {
-          result = await storage.migrateAIContentToNewTable();
+        if (typeof (storage as any).migrateAIContentToNewTable === 'function') {
+          result = await (storage as any).migrateAIContentToNewTable();
         }
 
         console.log("AI content migration completed successfully");
@@ -2926,13 +2961,15 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
       });
     } catch (error) {
       console.error("Error fetching all emails:", error);
-      console.error("Error stack:", error.stack);
+      if (error instanceof Error) {
+        console.error("Error stack:", error.stack);
+      }
       res.status(500).json({ error: "Failed to fetch emails" });
     }
   });
 
   // Send email endpoint for testing
-  app.post("/api/send-email", async (req, res) => {
+  app.post("/api/send-email", async (req: Request, res: Response) => {
     try {
       const { to, subject, html, quizAttemptId } = req.body;
       if (!to || !subject || !html) {
@@ -2945,7 +2982,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
       } else if (result.rateLimitInfo) {
         res.status(429).json({ success: false, error: "Rate limit exceeded", rateLimitInfo: result.rateLimitInfo });
       } else {
-        res.status(500).json({ success: false, error: result.error || "Failed to send email" });
+        res.status(500).json({ success: false, error: "Failed to send email" });
       }
     } catch (error) {
       console.error("Error in /api/send-email:", error);
@@ -2953,22 +2990,24 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
     }
   });
 
-  // Get payment details by paymentId (for test/dev only)
-  app.get("/api/payment/:paymentId", async (req: Request, res: Response) => {
-    try {
-      const paymentId = parseInt(req.params.paymentId);
-      if (!paymentId) {
-        return res.status(400).json({ error: "Invalid payment ID" });
+  // Get payment details by paymentId (development only)
+  if (process.env.NODE_ENV !== 'production') {
+    app.get("/api/payment/:paymentId", async (req: Request, res: Response) => {
+      try {
+        const paymentId = parseInt(req.params.paymentId);
+        if (!paymentId) {
+          return res.status(400).json({ error: "Invalid payment ID" });
+        }
+        const payment = await storage.getPaymentById(paymentId);
+        if (!payment) {
+          return res.status(404).json({ error: "Payment not found" });
+        }
+        res.json({ success: true, payment });
+      } catch (error) {
+        res.status(500).json({ error: "Internal server error" });
       }
-      const payment = await storage.getPaymentById(paymentId);
-      if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
-      }
-      res.json({ success: true, payment });
-    } catch (error) {
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+    });
+  }
 
   // Get business model scores for a quiz attempt
   app.get("/api/business-model-scores/:attemptId", async (req: Request, res: Response) => {
@@ -3057,7 +3096,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
         await storage.updateUser(user.id, { isPaid: true, isTemporary: false });
         res.json({ success: true, userId: user.id });
       } catch (error) {
-        res.status(500).json({ error: 'Failed to mark user as paid', details: error?.message });
+        res.status(500).json({ error: 'Failed to mark user as paid', details: error instanceof Error ? error.message : 'Unknown error' });
       }
     });
   }
@@ -3065,7 +3104,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
   // --- TEST-ONLY ENDPOINTS (development only) ---
   if (process.env.NODE_ENV !== 'production') {
     // Create or update a user with isPaid=true
-    app.post('/api/test-setup-user', async (req, res) => {
+    app.post('/api/test-setup-user', async (req: Request, res: Response) => {
       const { email, password } = req.body;
       if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
       try {
@@ -3081,12 +3120,12 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
         }
         res.json({ success: true, user });
       } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
       }
     });
 
     // Create or update a paid quiz attempt for the user
-    app.post('/api/test-setup-quiz-attempt', async (req, res) => {
+    app.post('/api/test-setup-quiz-attempt', async (req: Request, res: Response) => {
       const { email, isPaid } = req.body;
       if (!email) return res.status(400).json({ error: 'Missing email' });
       try {
@@ -3122,7 +3161,7 @@ CRITICAL: Use ONLY the actual data provided above. Do NOT make up specific numbe
         }
         res.json({ success: true, attempt });
       } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
       }
     });
   }

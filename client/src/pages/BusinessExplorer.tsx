@@ -1,13 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Clock,
   DollarSign,
   TrendingUp,
-  CheckCircle,
-  AlertTriangle,
 } from "lucide-react";
 import { businessModels, BusinessModel } from "../data/businessModels";
 import { PaywallModal } from "../components/PaywallModals";
@@ -15,11 +13,9 @@ import { PaymentAccountModal } from "../components/PaymentAccountModal";
 import { usePaywall } from "../contexts/PaywallContext";
 import { useAuth } from "../contexts/AuthContext";
 import { QuizData } from "../types";
-import { generateAIPersonalizedPaths } from "../utils/quizLogic";
 import { businessModelService } from "../utils/businessModelService";
 import { getSafeEmoji } from '../utils/contentUtils';
-import { Button } from "../components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "../components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "../components/ui/card";
 import '../styles/BusinessCard.css';
 
 interface BusinessExplorerProps {

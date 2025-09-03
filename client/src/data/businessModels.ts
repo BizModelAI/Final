@@ -124,7 +124,7 @@ export const businessModels: BusinessModel[] = [
       "Analytics and platform adaptation",
     ],
     tools: ["CapCut", "Canva", "TikTok", "Instagram", "Notion"],
-    emoji: "📸",
+    emoji: "🚀",
     resources: [
       {
         type: "Free",
@@ -543,7 +543,7 @@ export const businessModels: BusinessModel[] = [
   },
   {
     id: "digital-services",
-    title: "Digital Services Agency",
+    title: "Digital Services",
     description:
       "Offer a range of online services including branding, web dev, email marketing, SEO with flexible project-based pricing. In 2025, success requires process automation, specialization, and client retention.",
     detailedDescription:
@@ -569,7 +569,7 @@ export const businessModels: BusinessModel[] = [
       "Client retention",
     ],
     tools: ["Trello", "Slack", "Canva", "Webflow", "Notion"],
-    emoji: "🖥️",
+    emoji: "💻",
     resources: [
       {
         type: "Free",
@@ -629,7 +629,7 @@ export const businessModels: BusinessModel[] = [
       "Tech adoption (AI bots, analytics)",
     ],
     tools: ["TradingView", "Thinkorswim", "Binance", "Robinhood"],
-    emoji: "📈",
+    emoji: "💹",
     resources: [
       {
         type: "Free",
@@ -690,7 +690,7 @@ export const businessModels: BusinessModel[] = [
       "Sustainability and authenticity",
     ],
     tools: ["eBay", "Mercari", "Facebook Marketplace", "Pirate Ship"],
-    emoji: "🛍️",
+    emoji: "📦",
     resources: [
       {
         type: "Free",
@@ -751,7 +751,7 @@ export const businessModels: BusinessModel[] = [
       "Storytelling and content creation",
     ],
     tools: ["Etsy", "Shopify", "Canva", "Instagram", "Printful"],
-    emoji: "🎨",
+    emoji: "🧶",
     resources: [
       {
         type: "Free",
@@ -813,7 +813,7 @@ export const businessModels: BusinessModel[] = [
       "Storytelling",
     ],
     tools: ["Google Docs", "Grammarly", "Hemingway Editor", "Trello", "Stripe", "Jasper", "ChatGPT"],
-    emoji: "✒️",
+    emoji: "✍️",
     resources: [
       {
         type: "Free",
@@ -1108,7 +1108,7 @@ export const businessModels: BusinessModel[] = [
       "Proactive client management",
     ],
     tools: ["Google Workspace", "Notion", "Trello", "Slack", "Zoom"],
-    emoji: "🧑‍💼",
+    emoji: "👥",
     resources: [
       {
         type: "Free",
@@ -1140,6 +1140,65 @@ export const businessModels: BusinessModel[] = [
       "May involve inconsistent hours",
       "Burnout risk from juggling clients",
       "Need to keep up with new tech and platforms",
+    ],
+  },
+  {
+    id: "online-coaching",
+    title: "Online Coaching",
+    description:
+      "Provide expertise and guidance to clients in your area of specialization through one-on-one or group coaching sessions conducted online.",
+    detailedDescription:
+      "Online coaching involves providing expertise, guidance, and strategic advice to clients in your area of specialization. This could range from business consulting to life coaching, fitness training, or career guidance. Sessions are typically conducted via video calls, and packages can include one-on-one sessions, group coaching, or digital courses. Success depends on establishing credibility, building trust with clients, and delivering measurable results.",
+    category: "Service",
+    scalability: "Medium",
+    fit: "Subject matter experts, certified coaches, experienced professionals",
+    timeToStart: "1–2 weeks",
+    initialInvestment: "$0–$500",
+    potentialIncome: "$1,000–$10,000+/month",
+    timeCommitment: "10–40 hours/week",
+    requiredSkills: [
+      "Deep expertise in chosen niche",
+      "Communication and listening skills",
+      "Coaching methodologies",
+      "Goal setting and accountability",
+      "Problem-solving abilities",
+      "Empathy and patience",
+      "Program design",
+      "Marketing and client acquisition",
+      "Technology for online sessions",
+      "Business management",
+    ],
+    tools: ["Zoom", "Calendly", "Coaching platforms", "CRM software", "Payment processors"],
+    emoji: "🧑‍💼",
+    resources: [
+      {
+        type: "Free",
+        name: "International Coach Federation",
+        url: "https://coachingfederation.org/",
+        description: "Professional coaching standards and resources",
+      },
+      {
+        type: "Paid",
+        name: "Coach Training Alliance",
+        url: "https://coachtrainingalliance.com/",
+        description: "Comprehensive coach certification programs",
+      },
+    ],
+    pros: [
+      "Use existing knowledge and skills",
+      "Flexible scheduling",
+      "High hourly rates possible",
+      "Rewarding work helping others",
+      "No inventory needed",
+      "Global client reach",
+    ],
+    cons: [
+      "Time-for-money limitation",
+      "Seasonal demand variations",
+      "Need to manage difficult clients",
+      "Preparation time required",
+      "Competition from platforms",
+      "Inconsistent income",
     ],
   },
   {
@@ -1228,7 +1287,7 @@ export const businessModels: BusinessModel[] = [
       "Hybrid service delivery",
     ],
     tools: ["Zoom", "Notion", "Airtable", "ChatGPT", "Google Workspace", "LinkedIn", "Tableau"],
-    emoji: "🧑‍💼",
+    emoji: "💼",
     resources: [
       {
         type: "Free",
@@ -1408,7 +1467,7 @@ export const businessModels: BusinessModel[] = [
       "Audience engagement",
     ],
     tools: ["WordPress", "Yoast SEO", "Mailchimp", "Canva", "Google Analytics", "SurferSEO", "Jasper"],
-    emoji: "✍️",
+    emoji: "📝",
     resources: [
       {
         type: "Free",
@@ -1469,7 +1528,7 @@ export const businessModels: BusinessModel[] = [
       "Risk management",
     ],
     tools: ["Helium 10", "Jungle Scout", "AMZScout", "Seller Central", "Keepa", "Canva"],
-    emoji: "🏭",
+    emoji: "🏷️",
     resources: [
       {
         type: "Free",

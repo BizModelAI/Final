@@ -11,7 +11,6 @@ const getJwtSecret = (): string => {
 };
 
 const JWT_EXPIRES_IN = '7d';
-const COOKIE_NAME = 'auth_token';
 
 export interface AuthPayload {
   userId: number;

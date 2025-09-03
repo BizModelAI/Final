@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Mail, ArrowRight, CheckCircle, Clock, Star, User } from "lucide-react";
 import type { QuizData } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-const uuidv4 = () => crypto.randomUUID();
+// UUID generation removed - now properly creates quiz attempts via API
 
 interface LoggedInCongratulationsProps {
   onContinue: () => void;
@@ -144,13 +144,26 @@ const CongratulationsLoggedIn: React.FC<LoggedInCongratulationsProps> = ({
     }
   };
 
-  const handleContinueToResults = () => {
-    // Ensure currentQuizAttemptId exists
+  const handleContinueToResults = async () => {
+    // Ensure currentQuizAttemptId exists - if not, create a new quiz attempt
     let attemptId = localStorage.getItem("currentQuizAttemptId");
-    if (!attemptId) {
-      attemptId = uuidv4();
-      localStorage.setItem("currentQuizAttemptId", attemptId);
+    if (!attemptId && quizData) {
+      try {
+        const response = await fetch("/api/quiz-attempts/attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quizData }),
+        });
+        const data = await response.json();
+        if (data.success && data.attemptId) {
+          attemptId = data.attemptId.toString();
+          localStorage.setItem("currentQuizAttemptId", attemptId);
+        }
+      } catch (error) {
+        console.error("Failed to create quiz attempt:", error);
+      }
     }
+    
     if (quizData) {
       localStorage.setItem("quizData", JSON.stringify(quizData));
     }

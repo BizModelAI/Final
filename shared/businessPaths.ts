@@ -1976,22 +1976,46 @@ export const businessPaths: BusinessPath[] = [
     },
     actionPlan: {
       phase1: [
-        "Learn market fundamentals",
-        "Practice with paper trading",
-        "Develop trading strategy",
-        "Start with small amounts",
+        {
+          title: "Learn Market Fundamentals (Month 1-2)",
+          steps: [
+            "Learn market fundamentals and investment principles",
+            "Practice with paper trading and simulation platforms",
+            "Develop your initial trading strategy and risk tolerance",
+            "Start with small amounts to gain real experience",
+          ],
+          timeline: "1-2 months",
+          budget: "$100-500",
+          successMetrics: "Complete paper trading course, positive paper trades"
+        },
       ],
       phase2: [
-        "Refine risk management",
-        "Track performance metrics",
-        "Gradually increase capital",
-        "Diversify strategies",
+        {
+          title: "Refine Strategy & Management (Month 3-6)",
+          steps: [
+            "Refine risk management and stop-loss strategies",
+            "Track performance metrics and analyze results",
+            "Gradually increase capital as confidence grows",
+            "Diversify strategies across different markets",
+          ],
+          timeline: "3-4 months",
+          budget: "$1000-5000",
+          successMetrics: "Consistent profitable months, 5%+ monthly returns"
+        },
       ],
       phase3: [
-        "Scale successful strategies",
-        "Consider alternative investments",
-        "Potentially manage others' money",
-        "Build investment business",
+        {
+          title: "Scale & Business Development (Month 6-12)",
+          steps: [
+            "Scale successful strategies with larger capital",
+            "Consider alternative investments and asset classes",
+            "Potentially manage others' money or start fund",
+            "Build comprehensive investment business",
+          ],
+          timeline: "6-12 months",
+          budget: "$10000+",
+          successMetrics: "Manage $100K+ portfolio, consistent 10%+ annual returns"
+        },
       ],
     },
   },
@@ -3276,6 +3300,166 @@ export const businessPaths: BusinessPath[] = [
           timeline: "Ongoing",
           budget: "$6000+",
           successMetrics: "Firm with 15+ employees, $50K+ monthly revenue, industry recognition"
+        },
+      ],
+    },
+  },
+  {
+    id: "print-on-demand",
+    name: "Print on Demand",
+    emoji: "🖼️",
+    description:
+      "Create and sell custom designs on products without inventory management",
+    detailedDescription:
+      "Print on Demand (POD) allows creators to design custom graphics, artwork, or text that gets printed on products like t-shirts, mugs, phone cases, and more only when orders are placed. Platforms like Printful, Printify, and Redbubble handle production and shipping, while creators focus on design, marketing, and niche selection. Success depends on unique designs, strong branding, and multi-platform marketing.",
+    fitScore: 0,
+    difficulty: "Medium",
+    timeToProfit: "1-2 weeks",
+    startupCost: "$0-1K",
+    potentialIncome: "$200-10K+/month",
+    pros: [
+      "No upfront inventory costs",
+      "Passive income potential", 
+      "Creative freedom",
+      "Global market reach",
+      "Easy to start with design skills",
+      "AI tools can speed up design",
+    ],
+    cons: [
+      "Lower profit margins",
+      "High competition and copycats",
+      "Design theft issues",
+      "Platform dependency", 
+      "Limited customization options",
+      "Marketing required for visibility",
+    ],
+    tools: [
+      "Canva",
+      "Photoshop",
+      "Printful",
+      "Etsy",
+      "Amazon Merch",
+    ],
+    skills: [
+      "Graphic design",
+      "Market research",
+      "Trend awareness",
+      "Basic marketing",
+      "Brand development",
+    ],
+    icon: "🖼️",
+    marketSize: "Global POD market worth $7B+ and growing rapidly",
+    averageIncome: {
+      beginner: "$50-500/month",
+      intermediate: "$500-3K/month",
+      advanced: "$3K-10K+/month",
+    },
+    userStruggles: [
+      "Finding profitable niches",
+      "Creating unique designs",
+      "Standing out from competition",
+      "Marketing products effectively",
+    ],
+    solutions: [
+      "Research trending keywords",
+      "Focus on specific niches",
+      "Use AI design tools efficiently",
+      "Multi-platform marketing approach",
+    ],
+    bestFitPersonality: [
+      "Creative and artistic",
+      "Trend-aware",
+      "Marketing-oriented",
+      "Patient with growth",
+    ],
+    resources: {
+      platforms: ["Printful", "Printify", "Redbubble", "Etsy"],
+      learning: ["POD courses", "Design tutorials"],
+      tools: ["Canva", "Figma", "Adobe Creative Suite"],
+    },
+    actionPlan: {
+      phase1: [
+        {
+          title: "Design Skills & Niche Research (Week 1-2)",
+          steps: [
+            "Learn basic graphic design using Canva or Photoshop",
+            "Research profitable POD niches and trending keywords",
+            "Analyze successful POD stores for inspiration",
+            "Set up accounts with POD platforms (Printful, Etsy)",
+            "Create initial design concepts and mockups",
+          ],
+          timeline: "2 weeks",
+          budget: "$0-100",
+          successMetrics: "5+ design concepts, platform accounts setup"
+        },
+        {
+          title: "Product Launch & Store Setup (Week 3-4)",
+          steps: [
+            "Create first batch of 10-20 designs",
+            "Set up Etsy store or Amazon Merch account",
+            "Write compelling product descriptions with SEO",
+            "Price products competitively for your niche",
+            "Launch first products and start social media promotion",
+          ],
+          timeline: "2 weeks",
+          budget: "$50-200",
+          successMetrics: "Store launched, 20+ products live, first sales"
+        },
+      ],
+      phase2: [
+        {
+          title: "Scaling & Multi-Platform (Month 2-3)",
+          steps: [
+            "Expand to multiple POD platforms",
+            "Create designs based on performance data",
+            "Implement social media marketing strategy",
+            "Build email list for customer retention",
+            "Analyze best-selling designs and create variations",
+          ],
+          timeline: "2 months",
+          budget: "$200-500",
+          successMetrics: "Multiple platforms, consistent sales, growing followers"
+        },
+        {
+          title: "Brand Development & Optimization (Month 3-6)",
+          steps: [
+            "Develop recognizable brand identity",
+            "Create customer personas for better targeting",
+            "Implement customer feedback loop",
+            "Optimize product listings for SEO",
+            "Build partnerships with influencers in your niche",
+          ],
+          timeline: "3 months",
+          budget: "$300-800",
+          successMetrics: "Strong brand presence, $1K+ monthly revenue"
+        },
+      ],
+      phase3: [
+        {
+          title: "Scale & Diversify (Month 6-12)",
+          steps: [
+            "Expand into new product categories and niches",
+            "Hire virtual assistants for design and marketing",
+            "Create exclusive collections and limited editions",
+            "Launch your own website with direct sales",
+            "Implement advanced marketing automation",
+          ],
+          timeline: "6 months",
+          budget: "$800-2000",
+          successMetrics: "Multiple niches, team in place, $5K+ monthly revenue"
+        },
+        {
+          title: "POD Empire & Exit Strategy (Year 1+)",
+          steps: [
+            "Launch POD agency helping other creators",
+            "Create educational content and courses",
+            "Develop proprietary design tools and software",
+            "Build portfolio of successful POD brands",
+            "Consider selling established stores or licensing designs",
+          ],
+          timeline: "Ongoing",
+          budget: "$2000+",
+          successMetrics: "Multiple revenue streams, $20K+ monthly revenue"
         },
       ],
     },

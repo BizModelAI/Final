@@ -1044,14 +1044,6 @@ function App() {
                     }
                   />
                   <Route
-                    path="/business-explorer"
-                    element={
-                      <Layout>
-                        <BusinessExplorer />
-                      </Layout>
-                    }
-                  />
-                  <Route
                     path="/explore"
                     element={
                       <Layout>
@@ -1069,14 +1061,6 @@ function App() {
                   />
                   <Route
                     path="/business-guide"
-                    element={
-                      <Layout>
-                        <BusinessGuide />
-                      </Layout>
-                    }
-                  />
-                  <Route
-                    path="/guide/:businessId"
                     element={
                       <Layout>
                         <BusinessGuide />

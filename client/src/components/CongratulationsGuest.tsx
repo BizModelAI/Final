@@ -10,8 +10,7 @@ import {
 import type { QuizData } from "../types";
 import { useNavigate } from "react-router-dom";
 // import { Modal } from "./ui/modal"; // If you have a modal component, otherwise use a simple div
-// import { v4 as uuidv4 } from 'uuid';
-const uuidv4 = () => crypto.randomUUID();
+// UUID generation removed - now properly creates quiz attempts via API
 
 interface EmailCaptureProps {
   onEmailSubmit: (email: string) => void;
@@ -270,13 +269,26 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
     onStartAIGeneration();
   };
 
-  const handleContinueToResults = () => {
-    // Ensure currentQuizAttemptId exists
+  const handleContinueToResults = async () => {
+    // Ensure currentQuizAttemptId exists - if not, create a new quiz attempt
     let attemptId = localStorage.getItem("currentQuizAttemptId");
-    if (!attemptId) {
-      attemptId = uuidv4();
-      localStorage.setItem("currentQuizAttemptId", attemptId);
+    if (!attemptId && quizData) {
+      try {
+        const response = await fetch("/api/quiz-attempts/attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quizData }),
+        });
+        const data = await response.json();
+        if (data.success && data.attemptId) {
+          attemptId = data.attemptId.toString();
+          localStorage.setItem("currentQuizAttemptId", attemptId);
+        }
+      } catch (error) {
+        console.error("Failed to create quiz attempt:", error);
+      }
     }
+    
     if (quizData) {
       localStorage.setItem("quizData", JSON.stringify(quizData));
     }

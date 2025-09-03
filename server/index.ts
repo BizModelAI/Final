@@ -3,7 +3,7 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express-serve-static-core";
 import session from "express-session";
 import { registerRoutes } from "./routes";
-import { serveStatic } from "./vite";
+import path from "path";
 
 const app = express();
 const port = process.env.PORT || 9000;
@@ -71,7 +71,14 @@ app.use(session({
     await registerRoutes(app);
     
     if (process.env.NODE_ENV === "production") {
-      serveStatic(app);
+      // Serve static files from the client build directory
+      const clientDistPath = path.join(__dirname, "../client/dist");
+      app.use(express.static(clientDistPath));
+      
+      // Catch all handler for SPA routing
+      app.get('*', (req: Request, res: Response) => {
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+      });
     }
     
     app.listen(port, '0.0.0.0', () => {

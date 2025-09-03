@@ -113,7 +113,7 @@ interface BusinessModelDetailProps {
 const BusinessModelDetail: React.FC<BusinessModelDetailProps> = ({
   quizData: propQuizData,
 }) => {
-  const { businessId } = useParams<{ businessId: string }>();
+  const { id: businessId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [businessPath, setBusinessPath] = useState<BusinessPath | null>(null);
   const [businessModel, setBusinessModel] = useState<any>(null);

@@ -48,7 +48,7 @@ import { API_ROUTES } from '../utils/apiClient';
 import { useAIInsights } from '../contexts/AIInsightsContext';
 import { useEmojiSafeguard } from "../hooks/useEmojiSafeguard";
 import '../styles/BusinessCard.css';
-import AIReportLoading from "./AIReportLoading";
+import FullReportLoadingPage from "./FullReportLoadingPage";
 import { generateBusinessModelBenefits } from "../utils/businessModelBenefits";
 
 // Helper function to generate 2-sentence descriptions for business models
@@ -508,17 +508,47 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     };
   }, [quizData, quizDataState, setHasCompletedQuiz, businessModelScores, calculateAndStoreScores, quizAttemptId, userEmail]);
 
-  // --- Robust fallback for missing data ---
-  // If required data is missing, try to reload from localStorage before showing Session Expired
+  // --- Enhanced data recovery system ---
+  // Try to recover missing data from localStorage and other sources
   useEffect(() => {
-    // quizData is a prop, so we cannot set it here
-    if (!quizAttemptId) {
-      const savedAttemptId = localStorage.getItem("currentQuizAttemptId");
-      if (savedAttemptId) {
-        setQuizAttemptId(parseInt(savedAttemptId));
+    const recoverMissingData = async () => {
+      console.log("🔄 Attempting data recovery...");
+      
+      // Try to recover quiz attempt ID
+      if (!quizAttemptId) {
+        const savedAttemptId = localStorage.getItem("currentQuizAttemptId");
+        if (savedAttemptId && !isNaN(parseInt(savedAttemptId))) {
+          console.log("✅ Recovered quiz attempt ID from localStorage:", savedAttemptId);
+          setQuizAttemptId(parseInt(savedAttemptId));
+        }
       }
+      
+      // Try to recover business model scores if missing but we have quiz data
+      const hasStoredQuizData = localStorage.getItem("quizData");
+      if ((!businessModelScores || businessModelScores.length === 0) && (quizData || hasStoredQuizData)) {
+        console.log("🎯 Business model scores missing but quiz data available - calculating scores...");
+        try {
+          const dataToUse = quizData || JSON.parse(hasStoredQuizData!);
+          await calculateAndStoreScores(dataToUse, quizAttemptId);
+          console.log("✅ Successfully calculated missing business model scores");
+        } catch (error) {
+          console.warn("❌ Failed to recover business model scores:", error);
+        }
+      }
+      
+      console.log("🏁 Data recovery attempt complete");
+    };
+    
+    // Only attempt recovery if we're missing some data but have some recovery options
+    const hasStoredQuizData = !!localStorage.getItem("quizData");
+    const hasStoredAttemptId = !!localStorage.getItem("currentQuizAttemptId");
+    const hasCompletedQuizStored = localStorage.getItem("hasCompletedQuiz") === "true";
+    
+    if ((hasStoredQuizData || hasStoredAttemptId || hasCompletedQuizStored) && 
+        (!quizAttemptId || !businessModelScores || businessModelScores.length === 0)) {
+      recoverMissingData();
     }
-  }, [quizAttemptId]);
+  }, [quizAttemptId, quizData, businessModelScores, calculateAndStoreScores]);
 
   // Handle pending full report request when paths are available
   useEffect(() => {
@@ -976,17 +1006,28 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
     await executeShareAction();
   };
 
-  // Check for required data
+  // Check for required data - be much more lenient about session expiration
   const missingQuizData = !quizData;
   const missingQuizAttemptId = !quizAttemptId;
   const missingScores = !businessModelScores || businessModelScores.length === 0;
 
-  // Only show Session Expired if data is truly unrecoverable after fallback
-  if ((missingQuizData || missingQuizAttemptId || missingScores) && !isInitializing) {
-    console.warn("[Results] Session expired or required data missing:", {
+  // Check if we can recover data from localStorage
+  const hasStoredQuizData = !!localStorage.getItem("quizData");
+  const hasStoredAttemptId = !!localStorage.getItem("currentQuizAttemptId");
+  const hasCompletedQuizFlag = localStorage.getItem("hasCompletedQuiz") === "true";
+  
+  // Only show Session Expired if we have NO way to recover the session
+  // If we have ANY stored data, keep trying to recover instead of showing expired message
+  const canRecoverSession = hasStoredQuizData || hasStoredAttemptId || hasCompletedQuizFlag;
+  
+  if (!canRecoverSession && (missingQuizData && missingQuizAttemptId) && !isInitializing) {
+    console.warn("[Results] Session truly expired - no recoverable data found:", {
       missingQuizData,
       missingQuizAttemptId,
       missingScores,
+      hasStoredQuizData,
+      hasStoredAttemptId,
+      hasCompletedQuizFlag,
       quizData,
       quizAttemptId,
       businessModelScores
@@ -1025,7 +1066,7 @@ const Results: React.FC<ResultsProps> = ({ quizData, onBack, userEmail }) => {
 
   if (showFullReportLoading) {
     return (
-      <AIReportLoading
+      <FullReportLoadingPage
         quizData={quizDataState || quizData}
         userEmail={userEmail}
         onComplete={(data: any) => {

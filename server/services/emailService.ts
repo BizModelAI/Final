@@ -1,11 +1,9 @@
 import type { QuizData } from "../../shared/types";
 import { Resend } from "resend";
-import { storage } from "../storage";
 import { PrismaClient } from '@prisma/client';
 import { centralizedScoringService } from "./centralizedScoringService";
 
 const prisma = new PrismaClient();
-import ContentStorageService from "./contentStorageService";
 import { getInvestmentRange, getTimeCommitmentRange } from "../utils/quizUtils";
 import { generatePreviewEmailHTML, generatePaidEmailHTML } from "./newEmailTemplates";
 
@@ -70,7 +68,7 @@ export class EmailService {
     return result.allowed;
   }
 
-  private async checkEmailRateLimitWithInfo(email: string): Promise<{ allowed: boolean; info?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
+  public async checkEmailRateLimitWithInfo(email: string): Promise<{ allowed: boolean; info?: { remainingTime: number; type: 'cooldown' | 'extended' } }> {
     const now = Date.now();
     const emailKey = email.toLowerCase();
     const cached = this.emailCache.get(emailKey);
@@ -382,49 +380,17 @@ export class EmailService {
     // Get the top match (highest score)
     const topMatch = scoredBusinessModels[0];
 
-    // Map business model descriptions
-    const businessDescriptions: { [key: string]: string } = {
-      "Affiliate Marketing":
-        "Promote other people's products and earn commission on sales",
-      "Content Creation / UGC":
-        "Create valuable content and monetize through multiple channels",
-      "Online Coaching":
-        "Share your expertise through 1-on-1 or group coaching programs",
-      "E-commerce Brand Building":
-        "Sell physical or digital products through your own online store",
-      Freelancing:
-        "Offer your skills and services to clients on a project basis",
-      "Copywriting":
-        "Write persuasive marketing content that drives sales and conversions",
-      "Ghostwriting":
-        "Write content for others who publish under their own name",
-      "Social Media Marketing Agency":
-        "Help businesses grow their social media presence",
-      "Virtual Assistant":
-        "Provide administrative and business support remotely",
-      "High-Ticket Sales / Closing":
-        "Sell high-value products or services for businesses",
-      "AI Marketing Agency": "Leverage AI tools to provide marketing solutions",
-      "Digital Services Agency": "Offer digital marketing and web services",
-      "YouTube Automation": "Create and manage monetized YouTube channels",
-      "Investing / Trading": "Generate income through financial markets",
-      "Online Reselling": "Buy and resell products online for profit",
-      "Handmade Goods": "Create and sell handcrafted products",
-      "Amazon FBA": "Sell products on Amazon using Fulfillment by Amazon",
-      "Podcasting": "Create and monetize audio content through sponsorships",
-      "Blogging": "Create written content to build audience and monetize",
-      "Consulting": "Provide expert advice and strategic guidance",
-      "Real Estate Investing": "Generate income through property investments",
-      "Online Course Creation": "Create and sell educational courses online",
-      "E-commerce": "Build and sell products through your own online store",
-      "Dropshipping": "Sell products online without holding inventory",
+    // Get business model description from centralized data
+    const getBusinessModelDescription = (modelName: string): string => {
+      // Import shared business model data for consistent descriptions
+      const { businessPaths } = require('../../shared/businessPaths');
+      const model = businessPaths.find((m: any) => m.name === modelName);
+      return model?.description || `Expert guidance in ${modelName}`;
     };
 
     return {
       name: topMatch.name,
-      description:
-        businessDescriptions[topMatch.name] ||
-        "A business model tailored to your skills and goals",
+      description: getBusinessModelDescription(topMatch.name),
       fitScore: Math.round(topMatch.score),
     };
   }

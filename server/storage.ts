@@ -55,6 +55,34 @@ class Storage {
   }) {
     const { userId, sessionId, quizData, isPaid = false } = data;
     
+    // Determine expiry based on user type
+    const getQuizAttemptExpiresAt = (userType: 'guest' | 'temporary' | 'paid'): Date | null => {
+      const now = new Date();
+      if (userType === 'guest') {
+        return new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
+      } else if (userType === 'temporary') {
+        return new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 3 months
+      } else {
+        return null; // paid users don't expire
+      }
+    };
+
+    // Determine user type and expiry
+    let userType: 'guest' | 'temporary' | 'paid' = 'guest';
+    let expiresAt: Date | null = null;
+
+    if (userId) {
+      // Check if user is paid
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      userType = user?.isPaid ? 'paid' : 'temporary';
+    } else {
+      userType = 'guest'; // Anonymous users
+    }
+
+    if (!isPaid) {
+      expiresAt = getQuizAttemptExpiresAt(userType);
+    }
+    
     // Use a transaction to ensure both quiz attempt and report access are created atomically
     return await this.prisma.$transaction(async (tx) => {
       // Create the quiz attempt
@@ -65,6 +93,7 @@ class Storage {
           quizData,
           isPaid,
           completedAt: new Date(),
+          expiresAt,
         },
       });
 
@@ -92,30 +121,20 @@ class Storage {
         });
       }
 
-      // Calculate and store business model scores within the same transaction
-      try {
-        const { calculateAllBusinessModelMatches } = await import('../shared/scoring');
-        const calculatedScores = calculateAllBusinessModelMatches(quizData);
-        
-        // Store scores in database
-        const scoresToStore = calculatedScores.map(score => ({
-          quizAttemptId: attempt.id,
-          businessModelId: score.id,
-          businessModelName: score.name,
-          score: score.score,
-          category: score.category,
-          fitScore: score.score // For backward compatibility
-        }));
-
-        await tx.businessModelScores.createMany({
-          data: scoresToStore
-        });
-
-        console.log(`Business model scores calculated and stored for quiz attempt ${attempt.id}`);
-      } catch (error) {
-        console.error(`Error calculating business model scores for quiz attempt ${attempt.id}:`, error);
-        // Don't fail the transaction if scoring fails - the quiz attempt is still valid
-      }
+      // Calculate and store business model scores using the centralized service
+      // Note: We'll do this after the transaction to avoid transaction timeout issues
+      console.log(`Quiz attempt ${attempt.id} created, will calculate scores after transaction`);
+      
+      // Schedule scoring to happen after transaction commits
+      setTimeout(async () => {
+        try {
+          const { centralizedScoringService } = await import('./services/centralizedScoringService');
+          await centralizedScoringService.calculateAndStoreScores(quizData, attempt.id);
+          console.log(`✅ Business model scores calculated and stored for quiz attempt ${attempt.id}`);
+        } catch (error) {
+          console.error(`❌ Error calculating business model scores for quiz attempt ${attempt.id}:`, error);
+        }
+      });
 
       console.log(`Quiz attempt ${attempt.id} created with report access and scoring initialized (transaction)`);
       return attempt;
@@ -132,6 +151,26 @@ class Storage {
 
   async getQuizAttemptsByUserId(userId: number) {
     return this.getQuizAttempts(userId);
+  }
+
+  async getAnonymousQuizAttemptsBySessionOrEmail(sessionId: string, email: string) {
+    return await this.prisma.quizAttempt.findMany({
+      where: {
+        AND: [
+          { userId: null },
+          {
+            OR: [
+              { sessionId: sessionId },
+              { 
+                user: {
+                  email: email
+                }
+              }
+            ]
+          }
+        ]
+      }
+    });
   }
 
   async getQuizAttempt(id: number) {

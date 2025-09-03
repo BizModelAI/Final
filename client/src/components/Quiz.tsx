@@ -887,15 +887,34 @@ const Quiz: React.FC<QuizProps> = ({ onComplete, onBack, userId }) => {
       const completionTimeout = setTimeout(async () => {
         console.log("Quiz completed with data:", formData);
 
-        // Generate a temporary quiz attempt ID if not present
+        // Ensure we have a proper integer quiz attempt ID
         let quizAttemptId = localStorage.getItem("currentQuizAttemptId");
         if (!quizAttemptId) {
-          if (window.crypto && window.crypto.randomUUID) {
-            quizAttemptId = window.crypto.randomUUID();
-          } else {
-            quizAttemptId = `temp-${Date.now()}`;
+          // Create a proper quiz attempt via API
+          try {
+            const response = await fetch("/api/quiz-attempts/attempt", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ quizData: formData }),
+            });
+            const data = await response.json();
+            if (data.success && data.attemptId) {
+              quizAttemptId = data.attemptId.toString();
+              localStorage.setItem("currentQuizAttemptId", quizAttemptId);
+            } else {
+              console.error("Failed to create quiz attempt via API:", data);
+              // Generate a temporary ID as fallback to allow quiz completion
+              quizAttemptId = `temp_${Date.now()}`;
+              localStorage.setItem("currentQuizAttemptId", quizAttemptId);
+              console.log("Using temporary quiz attempt ID:", quizAttemptId);
+            }
+          } catch (error) {
+            console.error("Error creating quiz attempt:", error);
+            // Generate a temporary ID as fallback to allow quiz completion
+            quizAttemptId = `temp_${Date.now()}`;
+            localStorage.setItem("currentQuizAttemptId", quizAttemptId);
+            console.log("Using temporary quiz attempt ID due to error:", quizAttemptId);
           }
-          localStorage.setItem("currentQuizAttemptId", quizAttemptId);
         }
 
         // Record the quiz attempt if userId is provided

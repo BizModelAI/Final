@@ -1,4 +1,4 @@
-import { QuizData, BusinessPath, AIAnalysis } from "../types";
+import { QuizData, BusinessPath } from "../types";
 import { AICacheManager } from "./aiCacheManager";
 
 const API_BASE = "";
@@ -195,12 +195,22 @@ Personality Traits:
   }
 
   private buildResultsPreviewPrompt(quizData: QuizData, topPaths: BusinessPath[]): string {
-      const userProfile = this.createUserProfile(quizData, topPaths[0]);
+    // Safety check for empty or undefined paths
+    if (!topPaths || topPaths.length === 0) {
+      throw new Error('No business paths provided for AI prompt generation');
+    }
+
+    const topPath = topPaths[0];
+    if (!topPath || !topPath.name) {
+      throw new Error('Invalid business path data provided');
+    }
+
+    const userProfile = this.createUserProfile(quizData, topPath);
 
     return `Based on your quiz data and your top business model, generate the following:
 
 ### Preview Insights
-Write 3 paragraphs analyzing why you are a strong fit for ${topPaths[0].name}, based on your quiz results.
+Write 3 paragraphs analyzing why you are a strong fit for ${topPath.name}, based on your quiz results.
 
    - Paragraph 1: Explain why this business model aligns with your goals, constraints, and personality traits. Be specific about how your exact quiz responses connect to this business model's requirements.
    - Paragraph 2: Describe your natural advantages in executing this model (skills, traits, or behaviors). Reference specific traits from your quiz that give you an edge in this field.
@@ -374,7 +384,7 @@ ${userProfile}`;
       return result;
     } catch (error) {
       console.error("Error generating results preview:", error);
-      console.log(`⚠️ Using fallback preview content due to error`);
+      // Silently use fallback content when OpenAI is not configured
       return this.getFallbackPreviewContent(quizData, topPaths);
     }
   }

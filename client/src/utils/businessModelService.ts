@@ -48,9 +48,9 @@ export class BusinessModelService {
   }
 
   /**
-   * Get business model matches for quiz data with caching
+   * Get business model matches for quiz data with server-first approach
    */
-  getBusinessModelMatches(quizData: QuizData): BusinessModelMatch[] {
+  async getBusinessModelMatches(quizData: QuizData, attemptId?: number): Promise<BusinessModelMatch[]> {
     const cacheKey = this.getCacheKey(quizData);
     const cached = this.cache.get(cacheKey);
     const now = Date.now();
@@ -59,16 +59,43 @@ export class BusinessModelService {
       return cached.matches;
     }
 
-    const rawMatches = calculateAllBusinessModelMatches(quizData);
+    let matches: BusinessModelMatch[] = [];
 
-    // Transform to consistent format
-    const matches: BusinessModelMatch[] = rawMatches.map((match) => ({
-      id: match.id,
-      name: match.name,
-      score: match.score,
-      category: match.category,
-      fitScore: match.score, // For backward compatibility
-    }));
+    // Try to fetch scores from server first if we have an attemptId
+    if (attemptId) {
+      try {
+        const response = await fetch(`/api/business-model-scores/${attemptId}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const serverScores = await response.json();
+          matches = serverScores.map((score: any) => ({
+            id: score.id,
+            name: score.name,
+            score: score.score,
+            category: score.category,
+            fitScore: score.fitScore || score.score
+          }));
+          console.log(`✅ Fetched ${matches.length} scores from server for attempt ${attemptId}`);
+        }
+      } catch (error) {
+        console.log('❌ Failed to fetch scores from server, falling back to local calculation:', error);
+      }
+    }
+
+    // Fallback to local calculation if server fetch failed
+    if (matches.length === 0) {
+      const rawMatches = calculateAllBusinessModelMatches(quizData);
+      matches = rawMatches.map((match) => ({
+        id: match.id,
+        name: match.name,
+        score: match.score,
+        category: match.category,
+        fitScore: match.score,
+      }));
+      console.log(`⚠️ Calculated ${matches.length} scores locally (fallback)`);
+    }
 
     // Cache the results
     this.cache.set(cacheKey, { matches, timestamp: now });
@@ -76,44 +103,69 @@ export class BusinessModelService {
     return matches;
   }
 
+
   /**
    * Get top N business model matches
    */
-  getTopMatches(quizData: QuizData, count: number = 3): BusinessModelMatch[] {
-    const allMatches = this.getBusinessModelMatches(quizData);
+  async getTopMatches(quizData: QuizData, count: number = 3, attemptId?: number): Promise<BusinessModelMatch[]> {
+    const allMatches = await this.getBusinessModelMatches(quizData, attemptId);
     return allMatches.slice(0, count);
   }
 
   /**
    * Get bottom N business model matches (worst fits)
    */
-  getBottomMatches(
+  async getBottomMatches(
     quizData: QuizData,
     count: number = 3,
-  ): BusinessModelMatch[] {
-    const allMatches = this.getBusinessModelMatches(quizData);
+    attemptId?: number
+  ): Promise<BusinessModelMatch[]> {
+    const allMatches = await this.getBusinessModelMatches(quizData, attemptId);
     return allMatches.slice(-count).reverse(); // Last N, reversed to show worst first
   }
 
   /**
    * Get matches by category
    */
-  getMatchesByCategory(
+  async getMatchesByCategory(
     quizData: QuizData,
     category: string,
-  ): BusinessModelMatch[] {
-    const allMatches = this.getBusinessModelMatches(quizData);
+    attemptId?: number
+  ): Promise<BusinessModelMatch[]> {
+    const allMatches = await this.getBusinessModelMatches(quizData, attemptId);
     return allMatches.filter((match) => match.category === category);
   }
 
   /**
    * Find specific business model match
    */
-  getBusinessModelMatch(
+  async getBusinessModelMatch(
     quizData: QuizData,
     businessId: string,
-  ): BusinessModelMatch | undefined {
-    const allMatches = this.getBusinessModelMatches(quizData);
+    attemptId?: number
+  ): Promise<BusinessModelMatch | undefined> {
+    const allMatches = await this.getBusinessModelMatches(quizData, attemptId);
+    return allMatches.find((match) => match.id === businessId);
+  }
+
+  // Sync versions for backward compatibility - use getBusinessModelMatchesSync internally
+  getTopMatchesSync(quizData: QuizData, count: number = 3): BusinessModelMatch[] {
+    const allMatches = this.getBusinessModelMatchesSync(quizData);
+    return allMatches.slice(0, count);
+  }
+
+  getBottomMatchesSync(quizData: QuizData, count: number = 3): BusinessModelMatch[] {
+    const allMatches = this.getBusinessModelMatchesSync(quizData);
+    return allMatches.slice(-count).reverse();
+  }
+
+  getMatchesByCategorySync(quizData: QuizData, category: string): BusinessModelMatch[] {
+    const allMatches = this.getBusinessModelMatchesSync(quizData);
+    return allMatches.filter((match) => match.category === category);
+  }
+
+  getBusinessModelMatchSync(quizData: QuizData, businessId: string): BusinessModelMatch | undefined {
+    const allMatches = this.getBusinessModelMatchesSync(quizData);
     return allMatches.find((match) => match.id === businessId);
   }
 }

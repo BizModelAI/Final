@@ -121,19 +121,12 @@ export const BusinessModelScoresProvider: React.FC<BusinessModelScoresProviderPr
     setError(null);
 
     try {
-      console.log('Calculating business model scores for quiz data...');
+      console.log('Fetching business model scores (server-first approach)...');
 
-      // Calculate scores using the sophisticated algorithm
-      const calculatedScores = businessModelService.getBusinessModelMatches(quizData);
+      // Use server-first approach with fallback to local calculation
+      const calculatedScores = await businessModelService.getBusinessModelMatches(quizData, attemptId);
       
-      // Cap the highest score at 95%
-      if (calculatedScores.length > 0) {
-        const maxScore = Math.max(...calculatedScores.map(s => s.score));
-        if (maxScore > 95) {
-          const scale = 95 / maxScore;
-          calculatedScores.forEach(s => { s.score = Math.round(s.score * scale); });
-        }
-      }
+      // Use actual calculated scores without artificial capping
 
       const timestamp = Date.now();
       const quizDataHash = generateQuizDataHash(quizData);

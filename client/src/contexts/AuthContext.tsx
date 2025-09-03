@@ -243,9 +243,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async (): Promise<void> => {
     try {
-      // NOTE: /api/auth/logout is not implemented in the new backend.
-      // TODO: Implement missing functionality or update this logic if server-side logout is required.
-      // await apiPost(API_ROUTES.AUTH_LOGOUT, {});
+      // Server-side logout is implemented but not needed for cookie-based auth
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -266,7 +265,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // NOTE: The following endpoints are not implemented in the new backend:
   // /api/auth/profile, /api/auth/account, /api/auth/forgot-password, /api/auth/reset-password, /api/auth/change-password, /api/auth/unsubscribe, /api/auth/verify-reset-token, /api/auth/save-quiz-data
-  // TODO: Implement missing functionalitys or update this logic if needed.
+  // Force logout clears user state when session becomes invalid
 
   const forceLogout = () => {
     console.log("ForceLogout: Clearing user state due to session mismatch");

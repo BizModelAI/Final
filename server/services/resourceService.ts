@@ -1,9 +1,4 @@
-import OpenAI from "openai";
-
-// Using gpt-4o-mini for cost efficiency
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+// Resource generation service for business models
 
 export interface ResourceLink {
   name: string;

@@ -1,6 +1,8 @@
 // Utility function to generate personalized business model benefits based on user quiz data
 export function generateBusinessModelBenefits(path: any, quizData: any): string[] {
-  if (!quizData || !path) return [];
+  if (!quizData || !path) {
+    return [];
+  }
   
   const benefits = [];
   
@@ -15,7 +17,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('High self-motivation keeps you consistent with content creation schedules');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style aligns perfectly with content creation workflows');
     }
     if (quizData.riskComfortLevel >= 4) {
@@ -28,7 +30,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
   
   // Freelancing specific benefits
   else if (path.id === 'freelancing') {
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work preference makes freelancing a natural fit for you');
     }
     if (quizData.selfMotivationLevel >= 4) {
@@ -56,7 +58,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent content creation and promotion');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits affiliate marketing\'s solo nature');
     }
     if (quizData.riskComfortLevel >= 3) {
@@ -122,7 +124,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent content creation and channel growth');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits YouTube automation\'s solo nature');
     }
     if (quizData.riskComfortLevel >= 3) {
@@ -276,7 +278,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent market research and strategy development');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits the solo nature of investing and trading');
     }
     if (quizData.techSkillsRating >= 4) {
@@ -298,7 +300,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent copy creation and client satisfaction');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits copywriting\'s solo nature');
     }
     if (quizData.techSkillsRating >= 3) {
@@ -342,7 +344,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent product sourcing and listing management');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits reselling\'s solo nature');
     }
     if (quizData.workStructurePreference === 'some-structure') {
@@ -364,7 +366,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent product creation and quality');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits handmade goods production');
     }
     if (quizData.workStructurePreference === 'some-structure') {
@@ -386,7 +388,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent product research and listing optimization');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits Amazon FBA\'s solo nature');
     }
     if (quizData.workStructurePreference === 'some-structure') {
@@ -408,7 +410,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent content creation and episode publishing');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits podcasting\'s solo nature');
     }
     if (quizData.techSkillsRating >= 3) {
@@ -430,7 +432,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent content creation and publishing');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits blogging\'s solo nature');
     }
     if (quizData.techSkillsRating >= 3) {
@@ -496,7 +498,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent course development and marketing');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits course creation\'s solo nature');
     }
     if (quizData.techSkillsRating >= 4) {
@@ -518,7 +520,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent content creation and client satisfaction');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits ghostwriting\'s solo nature');
     }
     if (quizData.techSkillsRating >= 3) {
@@ -540,7 +542,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.selfMotivationLevel >= 4) {
       benefits.push('Self-motivation drives consistent product research and store optimization');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style fits dropshipping\'s solo nature');
     }
     if (quizData.workStructurePreference === 'some-structure') {
@@ -562,7 +564,7 @@ export function generateBusinessModelBenefits(path: any, quizData: any): string[
     if (quizData.techSkillsRating >= 4) {
       benefits.push('Strong tech skills give you a competitive advantage in digital business');
     }
-    if (quizData.workCollaborationPreference === 'mostly-solo') {
+    if (quizData.workCollaborationPreference === 'independent') {
       benefits.push('Independent work style allows you to build businesses on your own terms');
     }
     if (quizData.riskComfortLevel >= 4) {

@@ -12,6 +12,8 @@ services:
         value: 10000
     healthCheckPath: /api/health
     autoDeploy: true
+    domains:
+      - www.bizmodelai.com
 
   - type: pserv
     name: bizmodelai-db

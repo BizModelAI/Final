@@ -1,62 +1,95 @@
-import { QuizData } from '../../shared/types';
 import { businessPaths } from '../../shared/businessPaths';
 import { centralizedScoringService } from './centralizedScoringService';
+
+// Import client business models for consistency
+import { businessModels as clientBusinessModels } from '../../client/src/data/businessModels';
+
+// Get business model data - always use client business models for consistency
+const getClientBusinessModels = () => {
+  return clientBusinessModels.map(model => ({
+    id: model.id,
+    title: model.title,
+    name: model.title, // alias for compatibility
+    emoji: model.emoji,
+    description: model.description,
+    detailedDescription: model.detailedDescription
+  }));
+};
 
 // New email templates based on React components
 export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
   
-  // Use pre-calculated scores if provided, otherwise get from centralized service
+  // Use pre-calculated scores if provided, otherwise calculate fresh scores for new quiz attempt
   let calculatedMatches = preCalculatedScores;
   if (!calculatedMatches || calculatedMatches.length === 0) {
+    // For new quiz attempts (like emails), always calculate fresh scores from quiz data
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+    console.log(`✅ Calculated ${calculatedMatches.length} fresh scores for new quiz attempt`);
+    
+    // Store the scores if we have a quiz attempt ID (but don't wait for it)
     if (quizAttemptId) {
-      try {
-        calculatedMatches = await centralizedScoringService.getStoredScores(quizAttemptId);
-        console.log(`Retrieved ${calculatedMatches.length} stored scores for attempt ${quizAttemptId}`);
-      } catch (error) {
-        console.log('Failed to get stored scores, falling back to calculation:', error);
-        // Fallback to calculation if needed
-        const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-        calculatedMatches = calculateAllBusinessModelMatches(quizData);
-        console.log(`Calculated ${calculatedMatches.length} scores as fallback`);
-      }
-    } else {
-      // Fallback to calculation if no attempt ID
-      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-      calculatedMatches = calculateAllBusinessModelMatches(quizData);
-      console.log(`Calculated ${calculatedMatches.length} scores (no attempt ID)`);
+      centralizedScoringService.calculateAndStoreScores(quizData, quizAttemptId).catch(error => {
+        console.log('⚠️ Failed to store scores (but email continues):', error);
+      });
     }
   }
   
-  // Ensure we have calculated matches - if still empty, calculate them
+  // Ensure we have calculated matches - fallback to local calculation if needed
   if (!calculatedMatches || calculatedMatches.length === 0) {
-    console.log('No calculated matches found, calculating scores as final fallback');
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-    calculatedMatches = calculateAllBusinessModelMatches(quizData);
-    console.log(`Final fallback calculated ${calculatedMatches.length} scores`);
+    console.log('⚠️ No scores calculated, using fallback local calculation');
+    try {
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      calculatedMatches = calculateAllBusinessModelMatches(quizData);
+      console.log(`✅ Fallback calculation successful: ${calculatedMatches.length} scores`);
+    } catch (fallbackError) {
+      console.error('❌ Fallback calculation also failed:', fallbackError);
+      // Use default matches as absolute last resort
+      calculatedMatches = [
+        { id: 'affiliate-marketing', name: 'Affiliate Marketing', score: 85, category: 'online' },
+        { id: 'content-creation', name: 'Content Creation', score: 80, category: 'creative' },
+        { id: 'freelance-services', name: 'Freelance Services', score: 75, category: 'service' }
+      ];
+      console.log('✅ Using default placeholder matches for email');
+    }
   }
+  
+  // Use the actual calculated scores without artificial capping
   
   // Use the actual calculated scores to determine top 3 paths
   const sortedMatches = calculatedMatches
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
   
-  console.log('Email template - Top 3 calculated matches:', sortedMatches.map(m => `${m.name} (${m.score}%)`));
+  console.log('Email template - Top 3 calculated matches (after capping):', sortedMatches.map(m => `${m.name} (${m.score}%)`));
   console.log('Email template - Available business path IDs:', businessPaths.map(p => p.id));
   
-  // Map the calculated scores to the business paths - NO FALLBACKS
+  // Get client business models for consistent metadata
+  const clientBusinessModels = getClientBusinessModels();
+  console.log('Email template - Using client business models for consistency with results page');
+  console.log('Email template - Available client model IDs:', clientBusinessModels.map((m: any) => m.id));
+  
+  // Map the calculated scores to the client business models - NO FALLBACKS
   const topPaths = sortedMatches.map(match => {
     // Must find exact ID match - no fallbacks allowed
-    const path = businessPaths.find(p => p.id === match.id);
+    const model = clientBusinessModels.find((m: any) => m.id === match.id);
     
-    if (!path) {
-      console.error(`CRITICAL ERROR: No business path found for ID: ${match.id} (${match.name})`);
-      console.error(`Available business path IDs:`, businessPaths.map(p => p.id));
-      throw new Error(`Business path mismatch: ${match.id} not found in business paths`);
+    if (!model) {
+      console.error(`CRITICAL ERROR: No client business model found for ID: ${match.id} (${match.name})`);
+      console.error(`Available client model IDs:`, clientBusinessModels.map((m: any) => m.id));
+      throw new Error(`Business model mismatch: ${match.id} not found in client models`);
     }
     
+    // Find the matching business path to get the canonical emoji
+    const businessPathData = businessPaths.find(bp => bp.id === model.id);
+    
     return {
-      ...path,
-      fitScore: match.score
+      id: model.id,
+      name: model.title, // Use title from client models
+      emoji: businessPathData?.emoji || model.emoji, // Use businessPaths emoji for consistency with results page
+      description: model.description,
+      detailedDescription: model.detailedDescription,
+      fitScore: match.score // Use the calculated score
     };
   });
   
@@ -869,58 +902,77 @@ export async function generatePreviewEmailHTML(quizData: any, quizAttemptId?: nu
 export async function generatePaidEmailHTML(quizData: any, quizAttemptId?: number, preCalculatedScores?: any[]): Promise<string> {
   const { businessPaths } = await import('../../shared/businessPaths');
   
-  // Use pre-calculated scores if provided, otherwise get from centralized service
+  // Use pre-calculated scores if provided, otherwise calculate fresh scores for new quiz attempt
   let calculatedMatches = preCalculatedScores;
   if (!calculatedMatches || calculatedMatches.length === 0) {
+    // For new quiz attempts (like emails), always calculate fresh scores from quiz data
+    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+    calculatedMatches = calculateAllBusinessModelMatches(quizData);
+    console.log(`✅ Calculated ${calculatedMatches.length} fresh scores for new quiz attempt`);
+    
+    // Store the scores if we have a quiz attempt ID (but don't wait for it)
     if (quizAttemptId) {
-      try {
-        calculatedMatches = await centralizedScoringService.getStoredScores(quizAttemptId);
-        console.log(`Retrieved ${calculatedMatches.length} stored scores for attempt ${quizAttemptId}`);
-      } catch (error) {
-        console.log('Failed to get stored scores, falling back to calculation:', error);
-        // Fallback to calculation if needed
-        const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-        calculatedMatches = calculateAllBusinessModelMatches(quizData);
-        console.log(`Calculated ${calculatedMatches.length} scores as fallback`);
-      }
-    } else {
-      // Fallback to calculation if no attempt ID
-      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-      calculatedMatches = calculateAllBusinessModelMatches(quizData);
-      console.log(`Calculated ${calculatedMatches.length} scores (no attempt ID)`);
+      centralizedScoringService.calculateAndStoreScores(quizData, quizAttemptId).catch(error => {
+        console.log('⚠️ Failed to store scores (but email continues):', error);
+      });
     }
   }
   
-  // Ensure we have calculated matches - if still empty, calculate them
+  // Ensure we have calculated matches - fallback to local calculation if needed
   if (!calculatedMatches || calculatedMatches.length === 0) {
-    console.log('No calculated matches found, calculating scores as final fallback');
-    const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
-    calculatedMatches = calculateAllBusinessModelMatches(quizData);
-    console.log(`Final fallback calculated ${calculatedMatches.length} scores`);
+    console.log('⚠️ No scores calculated, using fallback local calculation');
+    try {
+      const { calculateAllBusinessModelMatches } = await import('../../shared/scoring');
+      calculatedMatches = calculateAllBusinessModelMatches(quizData);
+      console.log(`✅ Fallback calculation successful: ${calculatedMatches.length} scores`);
+    } catch (fallbackError) {
+      console.error('❌ Fallback calculation also failed:', fallbackError);
+      // Use default matches as absolute last resort
+      calculatedMatches = [
+        { id: 'affiliate-marketing', name: 'Affiliate Marketing', score: 85, category: 'online' },
+        { id: 'content-creation', name: 'Content Creation', score: 80, category: 'creative' },
+        { id: 'freelance-services', name: 'Freelance Services', score: 75, category: 'service' }
+      ];
+      console.log('✅ Using default placeholder matches for email');
+    }
   }
+  
+  // Use the actual calculated scores without artificial capping
   
   // Use the actual calculated scores to determine top 3 paths
   const sortedMatches = calculatedMatches
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
   
-  console.log('Email template - Top 3 calculated matches:', sortedMatches.map(m => `${m.name} (${m.score}%)`));
+  console.log('Email template - Top 3 calculated matches (after capping):', sortedMatches.map(m => `${m.name} (${m.score}%)`));
   console.log('Email template - Available business path IDs:', businessPaths.map(p => p.id));
   
-  // Map the calculated scores to the business paths - NO FALLBACKS
+  // Get client business models for consistent metadata
+  const clientBusinessModels = getClientBusinessModels();
+  console.log('Email template - Using client business models for consistency with results page');
+  console.log('Email template - Available client model IDs:', clientBusinessModels.map((m: any) => m.id));
+  
+  // Map the calculated scores to the client business models - NO FALLBACKS
   const topPaths = sortedMatches.map(match => {
     // Must find exact ID match - no fallbacks allowed
-    const path = businessPaths.find(p => p.id === match.id);
+    const model = clientBusinessModels.find((m: any) => m.id === match.id);
     
-    if (!path) {
-      console.error(`CRITICAL ERROR: No business path found for ID: ${match.id} (${match.name})`);
-      console.error(`Available business path IDs:`, businessPaths.map(p => p.id));
-      throw new Error(`Business path mismatch: ${match.id} not found in business paths`);
+    if (!model) {
+      console.error(`CRITICAL ERROR: No client business model found for ID: ${match.id} (${match.name})`);
+      console.error(`Available client model IDs:`, clientBusinessModels.map((m: any) => m.id));
+      throw new Error(`Business model mismatch: ${match.id} not found in client models`);
     }
     
+    // Find the matching business path to get the canonical emoji
+    const businessPathData = businessPaths.find(bp => bp.id === model.id);
+    
     return {
-      ...path,
-      fitScore: match.score
+      id: model.id,
+      name: model.title, // Use title from client models
+      emoji: businessPathData?.emoji || model.emoji, // Use businessPaths emoji for consistency with results page
+      description: model.description,
+      detailedDescription: model.detailedDescription,
+      fitScore: match.score // Use the calculated score
     };
   });
   

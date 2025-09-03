@@ -7,6 +7,20 @@ type Express = express.Express;
 type Request = express.Request;
 type Response = express.Response;
 
+// Standardized error handler for consistent API responses
+function handleApiError(res: Response, error: unknown, context: string = 'API request', statusCode: number = 500) {
+  console.error(`Error in ${context}:`, error);
+  
+  // Extract error message safely
+  const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+  
+  // Send standardized error response
+  res.status(statusCode).json({
+    error: errorMessage,
+    context: context
+  });
+}
+
 // Temporary session cache as fallback for cookie issues
 const tempSessionCache = new Map<
   string,
@@ -105,31 +119,6 @@ export function setUserIdInRequest(req: any, userId: number): void {
   });
 }
 
-// Helper function to set user in session and cache with forced save
-export function setUserIdInRequestAndSave(req: any, userId: number): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // Set in normal session
-    req.session.userId = userId;
-
-    // Also set in cache as fallback
-    const sessionKey = getSessionKey(req);
-    tempSessionCache.set(sessionKey, {
-      userId: userId,
-      timestamp: Date.now(),
-    });
-
-    // Force save the session
-    req.session.save((err: any) => {
-      if (err) {
-        console.error("Error saving session:", err);
-        reject(err);
-      } else {
-        console.log(`Session saved successfully for user ${userId}`);
-        resolve();
-      }
-    });
-  });
-}
 
 // Session types are now declared in server/types.d.ts
 
@@ -154,91 +143,95 @@ export function setupAuthRoutes(app: Express) {
     next();
   });
 
-  // Cookie test endpoint - sets a test value and returns session info
-  app.get("/api/auth/cookie-test", async (req: Request, res: Response) => {
-    const testValue = `test-${Date.now()}`;
-    req.session.testValue = testValue;
-
-    res.json({
-      sessionId: req.sessionID,
-      testValue: testValue,
-      sessionExists: !!req.session,
-      cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
-      userAgent: req.headers["user-agent"]?.substring(0, 50) + "..." || "none",
-      setCookieHeader: res.getHeaders()["set-cookie"] || "none",
-    });
-  });
-
-  // Debug endpoint to check session state
-  app.get("/api/auth/session-debug", async (req: Request, res: Response) => {
-    res.json({
-      sessionId: req.sessionID,
-      userId: req.session?.userId,
-      testValue: req.session?.testValue || "none",
-      sessionExists: !!req.session,
-      cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
-      userAgent: req.headers["user-agent"]?.substring(0, 50) + "..." || "none",
-    });
-  });
-
-  // Debug endpoint to dump session and cookies for troubleshooting
-  app.get("/api/auth/debug", async (req: Request, res: Response) => {
-    console.log("/api/auth/debug called", {
-      sessionId: req.sessionID,
-      session: req.session,
-      cookies: req.headers.cookie,
-      userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
-    });
-    res.json({
-      sessionId: req.sessionID,
-      session: req.session,
-      cookies: req.headers.cookie,
-      userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
-    });
-  });
-
-  // Debug endpoint to dump session and cookies for troubleshooting
-  app.get("/api/auth/session-dump", async (req: Request, res: Response) => {
-    res.json({
-      sessionId: req.sessionID,
-      session: req.session,
-      cookies: req.headers.cookie,
-      userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
-    });
-  });
-
-  // Test endpoint to set and check session
-  app.post("/api/auth/session-test", async (req: Request, res: Response) => {
-    try {
+  // Debug endpoints - only available in development
+  if (process.env.NODE_ENV === 'development') {
+    // Cookie test endpoint - sets a test value and returns session info
+    app.get("/api/auth/cookie-test", async (req: Request, res: Response) => {
       const testValue = `test-${Date.now()}`;
       req.session.testValue = testValue;
 
-      console.log("Session test: Setting test value", {
+      res.json({
         sessionId: req.sessionID,
         testValue: testValue,
         sessionExists: !!req.session,
+        cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
+        userAgent: req.headers["user-agent"]?.substring(0, 50) + "..." || "none",
+        setCookieHeader: res.getHeaders()["set-cookie"] || "none",
       });
-
-      res.json({
-        success: true,
-        sessionId: req.sessionID,
-        testValue: testValue,
-        message: "Test value set in session",
-      });
-    } catch (error) {
-      console.error("Session test error:", error);
-      res.status(500).json({ error: "Session test failed" });
-    }
-  });
-
-  app.get("/api/auth/session-test", async (req: Request, res: Response) => {
-    res.json({
-      sessionId: req.sessionID,
-      testValue: req.session?.testValue || null,
-      sessionExists: !!req.session,
-      cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
     });
-  });
+
+    // Debug endpoint to check session state
+    app.get("/api/auth/session-debug", async (req: Request, res: Response) => {
+      res.json({
+        sessionId: req.sessionID,
+        userId: req.session?.userId,
+        testValue: req.session?.testValue || "none",
+        sessionExists: !!req.session,
+        cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
+        userAgent: req.headers["user-agent"]?.substring(0, 50) + "..." || "none",
+      });
+    });
+
+    // Debug endpoint to dump session and cookies for troubleshooting
+    app.get("/api/auth/debug", async (req: Request, res: Response) => {
+      console.log("/api/auth/debug called", {
+        sessionId: req.sessionID,
+        session: req.session,
+        cookies: req.headers.cookie,
+        userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
+      });
+      res.json({
+        sessionId: req.sessionID,
+        session: req.session,
+        cookies: req.headers.cookie,
+        userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
+      });
+    });
+
+    // Debug endpoint to dump session and cookies for troubleshooting
+    app.get("/api/auth/session-dump", async (req: Request, res: Response) => {
+      res.json({
+        sessionId: req.sessionID,
+        session: req.session,
+        cookies: req.headers.cookie,
+        userAgent: req.headers["user-agent"]?.substring(0, 100) || "none",
+      });
+    });
+
+    // Test endpoint to set and check session
+    app.post("/api/auth/session-test", async (req: Request, res: Response) => {
+      try {
+        const testValue = `test-${Date.now()}`;
+        req.session.testValue = testValue;
+
+        console.log("Session test: Setting test value", {
+          sessionId: req.sessionID,
+          testValue: testValue,
+          sessionExists: !!req.session,
+        });
+
+        res.json({
+          success: true,
+          sessionId: req.sessionID,
+          testValue: testValue,
+          message: "Test value set in session",
+        });
+      } catch (error) {
+        console.error("Session test error:", error);
+        res.status(500).json({ error: "Session test failed" });
+      }
+    });
+
+    // Test endpoint to get session test value
+    app.get("/api/auth/session-test", async (req: Request, res: Response) => {
+      res.json({
+        sessionId: req.sessionID,
+        testValue: req.session?.testValue || null,
+        sessionExists: !!req.session,
+        cookieHeader: req.headers.cookie?.substring(0, 100) + "..." || "none",
+      });
+    });
+  } // End development-only endpoints
 
   // Get current user session
   app.get("/api/auth/me", async (req: Request, res: Response) => {
@@ -281,14 +274,7 @@ export function setupAuthRoutes(app: Express) {
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
-      console.error("Error in /api/auth/me:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : "No stack trace",
-        sessionId: req.sessionID,
-        userId: req.session.userId,
-      });
-      res.status(500).json({ error: "Internal server error" });
+      handleApiError(res, error, "/api/auth/me");
     }
   });
 
@@ -369,8 +355,7 @@ export function setupAuthRoutes(app: Express) {
         res.json(userWithoutPassword);
       });
     } catch (error) {
-      console.error("Error in /api/auth/login:", error);
-      res.status(500).json({ error: "Internal server error" });
+      handleApiError(res, error, "/api/auth/login");
     }
   });
 
@@ -612,8 +597,7 @@ export function setupAuthRoutes(app: Express) {
       const { password: _, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (error) {
-      console.error("Error in /api/auth/profile:", error);
-      res.status(500).json({ error: "Internal server error" });
+      handleApiError(res, error, "/api/auth/profile");
     }
   });
 
