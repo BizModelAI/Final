@@ -26,7 +26,7 @@ function Footer() {
 
   const handlePrivacyPolicyClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    navigate("/privacy");
+    navigate("/privacy-policy");
     // Scroll to top after navigation
     const privacyTimeout = setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -104,7 +104,7 @@ function Footer() {
               </li>
               <li>
                 <a
-                  href="/privacy"
+                  href="/privacy-policy"
                   onClick={handlePrivacyPolicyClick}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
