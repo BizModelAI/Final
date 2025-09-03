@@ -123,7 +123,7 @@ class Storage {
 
       // Calculate and store business model scores using the centralized service
       // Note: We'll do this after the transaction to avoid transaction timeout issues
-      console.log(`Quiz attempt ${attempt.id} created, will calculate scores after transaction`);
+
       
       // Schedule scoring to happen after transaction commits
       setTimeout(async () => {
@@ -136,7 +136,7 @@ class Storage {
         }
       });
 
-      console.log(`Quiz attempt ${attempt.id} created with report access and scoring initialized (transaction)`);
+
       return attempt;
     });
   }

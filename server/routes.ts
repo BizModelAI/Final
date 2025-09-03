@@ -2019,11 +2019,11 @@ export async function registerRoutes(app: express.Express): Promise<void> {
         // Convert temporary user to permanent (set isTemporary: false)
         const user = await storage.getUser(userIdInt);
         if (user && user.isTemporary) {
-          console.log(`[PAYPAL DEBUG] Before update: user.id=${user.id}, email=${user.email}, isTemporary=${user.isTemporary}`);
+
           await storage.updateUser(user.id, { isTemporary: false });
           const updatedUser = await storage.getUser(user.id);
           if (updatedUser) {
-            console.log(`[PAYPAL DEBUG] After update: user.id=${updatedUser.id}, email=${updatedUser.email}, isTemporary=${updatedUser.isTemporary}`);
+
           }
           console.log(`Converted user ${user.id} (${user.email}) to permanent after PayPal payment.`);
         }
@@ -2108,8 +2108,7 @@ export async function registerRoutes(app: express.Express): Promise<void> {
             email: user.email
           });
           
-          console.log(`[WEBHOOK DEBUG] Before update: user.id=${user.id}, email=${user.email}, isTemporary=${user.isTemporary}`);
-          console.log(`[WEBHOOK DEBUG] After update: user.id=${updatedUser.id}, email=${updatedUser.email}, isTemporary=${updatedUser.isTemporary}`);
+
           console.log(`Converted user ${user.id} (${user.email}) to permanent after Stripe payment.`);
           
           // Update quiz attempt

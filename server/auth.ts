@@ -989,7 +989,7 @@ export function setupAuthRoutes(app: express.Express) {
         isPaid: user.isPaid || false,
       });
 
-      console.log(`Quiz attempt ${attempt.id} created for authenticated user ${userId}`);
+
 
       // Return success response with quiz attempt ID
       res.json({
