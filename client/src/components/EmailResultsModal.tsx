@@ -166,7 +166,7 @@ const EmailResultsModal: React.FC<EmailResultsModalProps> = ({
         const existingQuizAttemptId = localStorage.getItem("currentQuizAttemptId");
         
         if (!existingQuizAttemptId) {
-        const saveRes = await fetch("/api/save-quiz-data", {
+        const saveRes = await fetch("/api/quiz-attempts/attempt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quizData, email: inputEmail }),

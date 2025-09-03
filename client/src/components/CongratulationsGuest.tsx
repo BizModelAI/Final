@@ -190,7 +190,7 @@ const CongratulationsGuest: React.FC<EmailCaptureProps> = ({
         const existingQuizAttemptId = localStorage.getItem("currentQuizAttemptId");
         
         if (!existingQuizAttemptId) {
-        const response = await fetch("/api/save-quiz-data", {
+        const response = await fetch("/api/quiz-attempts/attempt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ quizData, email: email.trim() }),
